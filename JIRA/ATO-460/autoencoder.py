@@ -128,7 +128,7 @@ class DEDXEncoder():
 
     def CreateModel(self, inputdim = 7):
 
-        def BetheBlochAleph(lnbg,kp1=0.76176e-1,kp2=10.632,kp3=0.13279e-4,kp4=1.8631,kp5=1.9479):
+        def BetheBlochAleph(lnbg,kp1,kp2,kp3,kp4,kp5):# ,kp1=0.76176e-1,kp2=10.632,kp3=0.13279e-4,kp4=1.8631,kp5=1.9479):
             bg   = K.exp(lnbg)
             beta = bg/K.sqrt(1.+ bg*bg)
             aa   = K.exp(kp4*K.log(beta))
@@ -137,7 +137,7 @@ class DEDXEncoder():
             return (kp2-aa-bb)*kp1/aa
 
 
-        def BetheBlochGeant(lnbg,kp0=2.33,kp1=0.20,kp2=3.00,kp3=173.0e-9,kp4=0.49848):
+        def BetheBlochGeant(lnbg,kp0,kp1,kp2,kp3,kp4): #kp0=2.33,kp1=0.20,kp2=3.00,kp3=173.0e-9,kp4=0.49848
             bg=K.exp(lnbg)
             mK  = 0.307075e-3
             me  = 0.511e-3
@@ -158,8 +158,8 @@ class DEDXEncoder():
             return mK*mZA*(1+bg2)/bg2*(0.5*K.log(2*me*bg2*maxT/(mI*mI)) - bg2/(1+bg2) - d2)
 
 
-        def BetheBlochSolid(lnbg):
-            return BetheBlochGeant(lnbg)
+        def BetheBlochSolid(lnbg,kp0,kp1,kp2,kp3,kp4):
+            return BetheBlochGeant(lnbg,kp0,kp1,kp2,kp3,kp4)
 
         def getbeta(lnbg):
             bg   = K.exp(lnbg)
@@ -187,10 +187,12 @@ class DEDXEncoder():
 
         gb     = Dense(units=1, activation='linear')(enc)
 
-        BBA    = Lambda(BetheBlochAleph)(gb)
+        BBA_parameters = {'kp1':0.76176e-1, 'kp2':10.632, 'kp3':0.13279e-4, 'kp4':1.8631, 'kp5':1.9479}
+        BBS_parameters = {'kp0':2.33,'kp1':0.20,'kp2':3.00,'kp3':173.0e-9,'kp4':0.49848}
+        BBA    = Lambda(BetheBlochAleph, arguments=BBA_parameters)(gb)
         BBA4   = RepeatVector(4)(BBA)
         BBA4    = Flatten()(BBA4) 
-        BBS    = Lambda(BetheBlochSolid)(gb)
+        BBS    = Lambda(BetheBlochSolid, arguments=BBS_parameters)(gb)
         TOF    = Lambda(getbeta)(gb)
         final  = Concatenate(axis=-1)([BBS,TOF,BBA4])
 
