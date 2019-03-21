@@ -11,6 +11,21 @@ from itertools import izip
 
 class drawHisto(object):
     def __init__(self, histograms, selection, **options):
+        """
+        :param histograms:      TObjArray consists of multidimensional TTree's ( THnT )
+                                    for detailed info check:
+                                        https://root.cern.ch/doc/master/classTObjArray.html
+                                        https://root.cern.ch/doc/master/classTHnT.html
+
+        :param selection:       String, list of the  histograms to draw. Separated by commas (,)
+                                Dimensions to draw must be included inside of parenthesis' as an integer.
+                                Ex:
+                                    "hisdZ(3),hisdZ(0),hisPullZHM1(3),hisPullZCL(1)"
+
+        :param options:         -ncols: the number of columns
+
+
+        """
 
         self.selectionList = parseSelectionString(selection)
         self.histArray = histograms
@@ -19,7 +34,7 @@ class drawHisto(object):
         self.initSlider("")
         WidgetBox = widgets.VBox(self.sliderList)
 
-        self.figure, self.handle, self.source = self.drawGraph(self.histArray, self.selectionList, **options)
+        self.figure, self.handle, self.source = self.drawGraph(**options)
         self.updateInteractive("")
         display(WidgetBox)
 
@@ -70,7 +85,7 @@ class drawHisto(object):
                     self.sliderList.append(slider)
                     self.sliderNames.append(title)
 
-    def drawGraph(self, hisArray, selectionList, **options):
+    def drawGraph(self, **options):
         if 'ncols' in options.keys():
             nCols = options['ncols']
         else:
@@ -78,12 +93,12 @@ class drawHisto(object):
         p = []
         source = []
         iterator = 0
-        for hisTitle, projectionList in izip(*[iter(selectionList)] * 2):
+        for hisTitle, projectionList in izip(*[iter(self.selectionList)] * 2):
             dimList = map(int, projectionList)
             nDim = len(dimList)
             if nDim > 1:
                 raise NotImplementedError("Sorry!!.. Multidimensional projections have not been implemented, yet")
-            histogram = hisArray.FindObject(hisTitle).Projection(dimList[0])
+            histogram = self.histArray.FindObject(hisTitle).Projection(dimList[0])
             binsLowEdge = []
             binsUpEdge = []
             top = []
