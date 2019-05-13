@@ -40,7 +40,7 @@ class drawHisto(object):
 
     def updateInteractive(self, b):
         for hisTitle, projectionList in izip(*[iter(self.selectionList)] * 2):
-            for iDim in range(0, self.histArray.FindObject(hisTitle).GetNdimensions() - 1):
+            for iDim in range(self.histArray.FindObject(hisTitle).GetNdimensions() - 1,-1,-1):
                 iSlider = self.sliderNames.index(self.histArray.FindObject(hisTitle).GetAxis(iDim).GetTitle())
                 value = self.sliderList[iSlider].value
                 self.histArray.FindObject(hisTitle).GetAxis(iDim).SetRangeUser(value[0], value[1])
@@ -72,15 +72,15 @@ class drawHisto(object):
 
     def initSlider(self, b):
         for hisTitle, projectionList in izip(*[iter(self.selectionList)] * 2):
-            for iDim in range(0, self.histArray.FindObject(hisTitle).GetNdimensions() - 1):
+            for iDim in range(self.histArray.FindObject(hisTitle).GetNdimensions() - 1,-1,-1):
                 axis = self.histArray.FindObject(hisTitle).GetAxis(iDim)
                 title = axis.GetTitle()
-                maxRange = axis.GetXmax()
-                minRange = axis.GetXmin()
-                nBin = axis.GetNbins()
-                step = (maxRange - minRange) / nBin
-                slider = makeSlider(title, minRange, maxRange, step)
                 if title not in self.sliderNames:
+                    maxRange = axis.GetXmax()
+                    minRange = axis.GetXmin()
+                    nBin = axis.GetNbins()
+                    step = (maxRange - minRange) / nBin
+                    slider = makeSlider(title, minRange, maxRange, step)
                     slider.observe(self.updateInteractive, names='value')
                     self.sliderList.append(slider)
                     self.sliderNames.append(title)

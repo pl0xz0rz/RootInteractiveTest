@@ -54,7 +54,7 @@ class ToyDetectors:
     def BetheBlochSolidNP(self,lnbg):
         return self.BetheBlochGeantNP(lnbg)
     
-    def GenerateToyParticles(self, n=10000):
+    def GenerateToyParticles(self, n=10000,sigma=0.01):
         n_particles = n
         
         p_ges = []
@@ -83,9 +83,9 @@ class ToyDetectors:
                 BBS = self.BetheBlochSolidNP(math.log(bg))
                 BBA = self.BetheBlochAlephNP(math.log(bg))
                 ITS_tmp.append(np.random.normal(BBS,0.1*BBS) ) ## ITS dEdx = smeared gaus 10% 
-                TPCROC0_tmp.append(np.random.normal(BBA,0.1*BBA) )## TPC dEdx = smeared gaus 10% for 1st layer
-                TPCROC1_tmp.append(np.random.normal(BBA,0.1*BBA) )  ## TPC dEdx = smeared gaus 10% for 2nd layer
-                TPCROC2_tmp.append(np.random.normal(BBA,0.1*BBA) )  ## TPC dEdx = smeared gaus 10% for 3d layer
+                TPCROC0_tmp.append(np.random.normal(BBA,sigma*BBA) )## TPC dEdx = smeared gaus 10% for 1st layer
+                TPCROC1_tmp.append(np.random.normal(BBA,sigma*BBA) )  ## TPC dEdx = smeared gaus 10% for 2nd layer
+                TPCROC2_tmp.append(np.random.normal(BBA,sigma*BBA) )  ## TPC dEdx = smeared gaus 10% for 3d layer
                 TRD_tmp.append(np.random.normal(BBA,0.1*BBA) )  ## TRD dEdx = smeared gaus 10% 
                 TOF_tmp.append(np.random.normal(beta,0.01*beta) )  ## TOF - smeared with .... gaussian
                 pmeas_tmp.append(np.random.normal(p,0.01*p))
