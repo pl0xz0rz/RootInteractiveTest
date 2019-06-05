@@ -2,6 +2,7 @@
 Here you can find set of notebooks demonstrating functionality of the RootInteractive
 Usualy tutorials are organized according JIRA task - solving particular ALICE problem,
 
+See example tutorial list in [Index.ipynb](Index.ipynb)
 
 ## RootInteractive Information
 
