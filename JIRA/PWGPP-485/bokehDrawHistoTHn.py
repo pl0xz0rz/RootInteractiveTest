@@ -6,8 +6,6 @@ from bokeh.models.glyphs import Quad
 from bokeh.io import push_notebook
 from ipywidgets import *
 import pyparsing
-from itertools import izip
-
 
 class drawHisto(object):
     def __init__(self, histograms, selection, **options):
@@ -22,11 +20,18 @@ class drawHisto(object):
                                 Ex:
                                     "hisdZ(3),hisdZ(0),hisPullZHM1(3),hisPullZCL(1)"
 
-        :param options:         -ncols: the number of columns
+        :param options:         -ncols        :the number of columns
+                                -tooltips     :tooltips to show
+                                -plot_width   :the width of each plot
+                                -plot_height  :the height of each plot
+                                -bg_color     :Background color
+                                -color        :Histogram color
+                                -line_color   :Line color
+ 
 
 
         """
-
+        
         self.selectionList = parseSelectionString(selection)
         self.histArray = histograms
         self.sliderList = []
@@ -39,14 +44,14 @@ class drawHisto(object):
         display(WidgetBox)
 
     def updateInteractive(self, b):
-        for hisTitle, projectionList in izip(*[iter(self.selectionList)] * 2):
+        for hisTitle, projectionList in zip(*[iter(self.selectionList)] * 2):
             for iDim in range(self.histArray.FindObject(hisTitle).GetNdimensions() - 1,-1,-1):
                 iSlider = self.sliderNames.index(self.histArray.FindObject(hisTitle).GetAxis(iDim).GetTitle())
                 value = self.sliderList[iSlider].value
                 self.histArray.FindObject(hisTitle).GetAxis(iDim).SetRangeUser(value[0], value[1])
         iterator = 0
-        for hisTitle, projectionList in izip(*[iter(self.selectionList)] * 2):
-            dimList = map(int, projectionList)
+        for hisTitle, projectionList in zip(*[iter(self.selectionList)] * 2):
+            dimList = list(map(int, projectionList))
             nDim = len(dimList)
             if nDim > 1:
                 raise NotImplementedError("Sorry!!.. Multidimensional projections have not been implemented, yet")
@@ -71,7 +76,7 @@ class drawHisto(object):
         push_notebook(self.handle)
 
     def initSlider(self, b):
-        for hisTitle, projectionList in izip(*[iter(self.selectionList)] * 2):
+        for hisTitle, projectionList in zip(*[iter(self.selectionList)] * 2):
             for iDim in range(self.histArray.FindObject(hisTitle).GetNdimensions() - 1,-1,-1):
                 axis = self.histArray.FindObject(hisTitle).GetAxis(iDim)
                 title = axis.GetTitle()
@@ -85,16 +90,27 @@ class drawHisto(object):
                     self.sliderList.append(slider)
                     self.sliderNames.append(title)
 
-    def drawGraph(self, **options):
-        if 'ncols' in options.keys():
-            nCols = options['ncols']
-        else:
-            nCols = 2
+    def drawGraph(self, **kwargs):
+        
+        # define default options
+        options = {
+            'nCols': 2,
+            'tooltips': 'pan,box_zoom, wheel_zoom,box_select,lasso_select,reset',
+            'y_axis_type': 'auto',
+            'x_axis_type': 'auto',
+            'plot_width': 400,
+            'plot_height': 400,
+            'bg_color': '#fafafa',
+            'color' : "navy",
+            'line_color' : "white"
+        }
+        options.update(kwargs)
+        isNotebook = get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
         p = []
         source = []
         iterator = 0
-        for hisTitle, projectionList in izip(*[iter(self.selectionList)] * 2):
-            dimList = map(int, projectionList)
+        for hisTitle, projectionList in zip(*[iter(self.selectionList)] * 2):
+            dimList = list(map(int, projectionList))
             nDim = len(dimList)
             if nDim > 1:
                 raise NotImplementedError("Sorry!!.. Multidimensional projections have not been implemented, yet")
@@ -116,20 +132,16 @@ class drawHisto(object):
                 right=binsUpEdge,
                 top=top,
                 bottom=bottom
-            )
-            )
-            )
-            tools = 'pan,box_zoom, wheel_zoom,box_select,lasso_select,reset'
-            #   localHist = make_plot(histLabel, top, binsLowEdge, binsUpEdge, xLabel, yLabel, **options)
-            localHist = figure(title=histLabel, tools=tools, background_fill_color="#fafafa")
-            glyph = Quad(top="top", bottom="bottom", left="left", right="right", fill_color="navy", line_color="white")
+            )  )  )
+            localHist = figure(title=histLabel, tools=options['tooltips'], background_fill_color=options['bg_color'], y_axis_type=options['y_axis_type'], x_axis_type=options['x_axis_type'])
+            glyph = Quad(top="top", bottom="bottom", left="left", right="right", fill_color=options['color'], line_color=options['line_color'])
             localHist.add_glyph(source[iterator], glyph)
             localHist.y_range.start = 0
             localHist.xaxis.axis_label = xLabel
             localHist.yaxis.axis_label = yLabel
             p.append(localHist)
             iterator = iterator + 1
-        pAll = gridplot(p, ncols=nCols, plot_width=400, plot_height=400)
+            pAll = gridplot(p, ncols=options['nCols'], plot_width=options['plot_width'], plot_height=options['plot_height'])
         handle = show(pAll, notebook_handle=True)
         return pAll, handle, source
 
