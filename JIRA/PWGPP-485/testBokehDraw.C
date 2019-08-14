@@ -16,6 +16,23 @@ void initPython() {
   importBokeh += "import numpy as np\n";
 }
 
+TTree *  makeABCtree(Int_t nPoints){
+    TTreeSRedirector *pcstream = new TTreeSRedirector("treeABCD.root","recreate");
+    Double_t abcd[4];
+    for (Int_t i=0; i<nPoints; i++){
+        for (Int_t j=0; j<4; j++) abcd[j]=gRandom->Rndm();
+        (*pcstream)<<"tree"<<
+                   "A="<<abcd[0]<<
+                   "B="<<abcd[1]<<
+                   "C="<<abcd[2]<<
+                   "D="<<abcd[3]<<
+                   "\n";
+    }
+    delete pcstream;
+    TFile *f = TFile::Open("treeABCD.root");
+    return (TTree*)f->Get("tree");
+}
+
 void InitData(){
   AliExternalInfo info;
   tree=info.GetTree("QA.TPC","LHC15o","cpass1_pass1");
@@ -41,7 +58,7 @@ void treeBokehDrawArray(const char *treeName, const char *figureArray,  const ch
     TString x=importBokeh;
     x+="fig=bokehDraw.fromArray(";
     x+=treeName;
-    x+=", \"1\",";
+    x+=", \"A>0\",";
     x+=figureArray;
     x+=",";
     x+=widgets;
@@ -54,22 +71,18 @@ void treeBokehDrawArray(const char *treeName, const char *figureArray,  const ch
 
 void testBokehDrawArray(){
     initPython();
-    InitData();
+    TTree* tree= makeABCtree(100000);
     testBokehRender();
-    TString figureArray="["
-                    "[['chunkMedian'], ['meanMIP','meanMIPele'], {\"color\": \"red\", \"size\": 2, \"colorZvar\":\"MIPquality_Warning\"}],"
-                    "[['fraction'], ['resolutionMIP'], {\"color\": \"red\", \"size\": 2, \"colorZvar\":\"MIPquality_Warning\"}],"
-                    "['table']"
-                    "]";
-    TString widgets="\"tab.sliders(slider.meanMIP(45,55,0.1,45,55),slider.meanMIPele(50,80,0.2,50,80),"
-                    "slider.resolutionMIP(0,0.15,0.01,0,0.15)),tab.checkboxGlobal(slider.global_Warning(0,1,1,0,1),"
-                    "checkbox.global_Outlier(0)),tab.checkboxMIP(slider.MIPquality_Warning(0,1,1,0,1),"
-                    "checkbox.MIPquality_Outlier(0), checkbox.MIPquality_PhysAcc(1))\"";
-    TString options = "tooltips=tooltips, layout=figureLayout,nEntries=100000000,x_axis_type='datetime'";
-    TString init ="tooltips=[(\"MIP\",\"(@meanMIP)\"),(\"Electron\",\"@meanMIPele\"),"
-    "(\"Global status\",\"(@global_Outlier,@global_Warning)\"),"
-    "(\"MIP status(Warning,Outlier,Acc.)\",\"@MIPquality_Warning,@MIPquality_Outlier,@MIPquality_PhysAcc\")]\n"
-    "figureLayout: str = '((0,1),(2, x_visible=1),commonY=1, x_visible=1,y_visible=0,plot_height=250,plot_width=1000)'";
+    TString figureArray= "["
+                         "[['A'], ['D+A','C-A'], {\"size\": 1}],"
+                         "[['A'], ['C+A', 'C-A']],"
+                         "[['A'], ['Category']]]";
+    TString widgets="\"slider.A(0,1,0.001,0.1,0.9),slider.B(0,1,0.001,0.1,0.9),"
+                    "slider.C(0,1,0.001,0.1,0.9),slider.D(0,1,0.001,0.1,0.9)\"";
+    TString options = "tooltips=tooltips, layout=figureLayout";
+    TString init ="tree = ROOT.gROOT.GetGlobal(\"tree\") \n"
+                  "tooltips=[(\"VarA\", \"(@A)\"), (\"VarB\", \"(@B)\"), (\"VarC\", \"(@C)\"), (\"VarD\", \"(@D)\")]\n"
+    "figureLayout: str = '((0,1),(2, x_visible=1),commonX=1, x_visible=1,y_visible=0,plot_height=250,plot_width=1000)'";
     std::cout<<init<<std::endl;
     TPython::Exec(init);
     treeBokehDrawArray("tree", figureArray, widgets, options);
@@ -93,20 +106,3 @@ void testEvalMatrix(Int_t m, Bool_t doPrint, Int_t nLoops=1000){
   timer.Start(); for (Int_t i=0; i<nLoops;i++)  {(*testMatrix)(0,0)+=1;testMatrix->Determinant();} timer.Print();
 }
 
-
-TTree *  makeABCtree(Int_t nPoints){
-  TTreeSRedirector *pcstream = new TTreeSRedirector("treeABCD.root","recreate")
-  Double_t abcd[4];
-  for (Int_t i=0; i<nPoints; i++){
-     for (Int_t j=0; j<4; j++) abcd[j]=gRandom->Rndm();
-    (*pcstream)<<"tree"<<
-      "A="<<abcd[0]<<
-      "B="<<abcd[1]<<
-      "C="<<abcd[2]<<
-      "D="<<abcd[3]<<
-      "\n";
-  }
-  delete pcstream;
-  TFile *f = TFile::Open("treeABCD.root");
-  return (TTree*)f->Get("tree");
-}
