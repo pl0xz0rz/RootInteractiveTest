@@ -92,3 +92,21 @@ void testEvalMatrix(Int_t m, Bool_t doPrint, Int_t nLoops=1000){
   printf("C loop\n");
   timer.Start(); for (Int_t i=0; i<nLoops;i++)  {(*testMatrix)(0,0)+=1;testMatrix->Determinant();} timer.Print();
 }
+
+
+TTree *  makeABCtree(Int_t nPoints){
+  TTreeSRedirector *pcstream = new TTreeSRedirector("treeABCD.root","recreate")
+  Double_t abcd[4];
+  for (Int_t i=0; i<nPoints; i++){
+     for (Int_t j=0; j<4; j++) abcd[j]=gRandom->Rndm();
+    (*pcstream)<<"tree"<<
+      "A="<<abcd[0]<<
+      "B="<<abcd[1]<<
+      "C="<<abcd[2]<<
+      "D="<<abcd[3]<<
+      "\n";
+  }
+  delete pcstream;
+  TFile *f = TFile::Open("treeABCD.root");
+  return (TTree*)f->Get("tree");
+}
