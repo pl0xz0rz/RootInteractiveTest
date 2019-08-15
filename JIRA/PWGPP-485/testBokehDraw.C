@@ -12,7 +12,7 @@ TStopwatch timer;
 void initPython() {
   importBokeh  = "from Tools.aliTreePlayer import * \n";
   importBokeh += "from anytree import * \n";
-  importBokeh += "from InteractiveDrawing.bokeh.bokehDraw import *\n";
+  importBokeh += "from InteractiveDrawing.bokeh.bokehDrawSA import *\n";
   importBokeh += "import numpy as np\n";
 }
 
@@ -56,7 +56,7 @@ void treeBokehDraw(const char * treeName ,const char *varX, const char *vary, co
 
 void treeBokehDrawArray(const char *treeName, const char *figureArray,  const char *widgets, const char *options){
     TString x=importBokeh;
-    x+="fig=bokehDraw.fromArray(";
+    x+="fig=bokehDrawSA.fromArray(";
     x+=treeName;
     x+=", \"A>0\",";
     x+=figureArray;
@@ -71,14 +71,14 @@ void treeBokehDrawArray(const char *treeName, const char *figureArray,  const ch
 
 void testBokehDrawArray(){
     initPython();
-    TTree* tree= makeABCtree(100000);
-    testBokehRender();
+    tree= makeABCtree(1000);
+    TPython::Exec("tree=ROOT.gROOT.GetGlobal(\"tree\")");
     TString figureArray= "["
                          "[['A'], ['D+A','C-A'], {\"size\": 1}],"
                          "[['A'], ['C+A', 'C-A']],"
-                         "[['A'], ['Category']]]";
-    TString widgets="\"slider.A(0,1,0.001,0.1,0.9),slider.B(0,1,0.001,0.1,0.9),"
-                    "slider.C(0,1,0.001,0.1,0.9),slider.D(0,1,0.001,0.1,0.9)\"";
+                         "[['A'], ['C']]]";
+    TString widgets="\"slider.A(0,1,0.01,0.1,0.9),slider.B(0,1,0.01,0.1,0.9),"
+                    "slider.C(0,1,0.01,0.1,0.9),slider.D(0,1,0.01,0.1,0.9)\"";
     TString options = "tooltips=tooltips, layout=figureLayout";
     TString init ="tree = ROOT.gROOT.GetGlobal(\"tree\") \n"
                   "tooltips=[(\"VarA\", \"(@A)\"), (\"VarB\", \"(@B)\"), (\"VarC\", \"(@C)\"), (\"VarD\", \"(@D)\")]\n"
