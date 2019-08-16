@@ -4,6 +4,7 @@
  initPython()
 
  */
+
 TString importBokeh="";
 TTree * tree=0;
 TMatrixD *testMatrix=0;
@@ -48,44 +49,34 @@ void testBokehRender(){
   TPython::Exec(x);
 }
 
-void treeBokehDraw(const char * treeName ,const char *varX, const char *vary, const char *varz, const char *layout, const char *option){
+void treeBokehDraw(const char * treeName ,const char *varX, const char *varY, const char *varZ, const char *layout, const char *option){
   TString x=importBokeh;
   x+="tree=ROOT.gROOT.GetGlobal(\"tree\") \n";
   x+=TString::Format("");
 }
 
-void treeBokehDrawArray(const char *treeName, const char *figureArray,  const char *widgets, const char *options){
+void treeBokehDrawArray(const char * treeName, const char *query, const char *figureArray,  const char *widgets, const char *options){
+    initPython();
     TString x=importBokeh;
-    x+="fig=bokehDrawSA.fromArray(";
-    x+=treeName;
-    x+=", \"A>0\",";
-    x+=figureArray;
-    x+=",";
-    x+=widgets;
-    x+=",";
-    x+=options;
-    x+=")";
-    std::cout<<x<<std::endl;
+    x = x + "tree=ROOT.gROOT.GetGlobal(\""+treeName+"\")\n" +
+            "fig=bokehDrawSA.fromArray(tree ,'" + query + "'," + figureArray + ",'" + widgets + "'," + options+")";
+//    std::cout<<x<<std::endl;
     TPython::Exec(x);
 }
 
 void testBokehDrawArray(){
-    initPython();
     tree= makeABCtree(1000);
-    TPython::Exec("tree=ROOT.gROOT.GetGlobal(\"tree\")");
+    TString query = "A>0";
     TString figureArray= "["
                          "[['A'], ['D+A','C-A'], {\"size\": 1}],"
                          "[['A'], ['C+A', 'C-A']],"
                          "[['A'], ['C']]]";
-    TString widgets="\"slider.A(0,1,0.01,0.1,0.9),slider.B(0,1,0.01,0.1,0.9),"
-                    "slider.C(0,1,0.01,0.1,0.9),slider.D(0,1,0.01,0.1,0.9)\"";
-    TString options = "tooltips=tooltips, layout=figureLayout";
-    TString init ="tree = ROOT.gROOT.GetGlobal(\"tree\") \n"
-                  "tooltips=[(\"VarA\", \"(@A)\"), (\"VarB\", \"(@B)\"), (\"VarC\", \"(@C)\"), (\"VarD\", \"(@D)\")]\n"
-    "figureLayout: str = '((0,1),(2, x_visible=1),commonX=1, x_visible=1,y_visible=0,plot_height=250,plot_width=1000)'";
-    std::cout<<init<<std::endl;
-    TPython::Exec(init);
-    treeBokehDrawArray("tree", figureArray, widgets, options);
+    TString widgets="slider.A(0,1,0.01,0.1,0.9),slider.B(0,1,0.01,0.1,0.9),"
+                    "slider.C(0,1,0.01,0.1,0.9),slider.D(0,1,0.01,0.1,0.9)";
+    TString options = "tooltips=[('VarA', '(@A)'), ('VarB', '(@B)'), ('VarC', '(@C)'), ('VarD', '(@D)')],"
+                      "layout= '((0,1),(2, x_visible=1),commonX=1, x_visible=1,y_visible=0,plot_height=250,plot_width=1000)'";
+
+    treeBokehDrawArray("tree", query, figureArray, widgets, options);
 }
 
 void testEvalMatrix(Int_t m, Bool_t doPrint, Int_t nLoops=1000){
