@@ -27,7 +27,7 @@ void dEdxPerformance1(){
                         "[['pt'], ['elmax'], {\"size\": 'sizeEl', 'colorZvar':'setting'}],"
                         "[['pt'], ['pimax'], {\"size\": 5, 'colorZvar':'setting'}],"
                         "['table'] ]";
-  TString widgets="query.xx(),slider.pt(0,2,0.04,0.1,2),slider.etaMin(0,0.7,0.1,0.7), slider.centMin(0,20,5,10), slider.pimax(40,120,1,40,120),slider.corr(0,1,1,0), slider.setting(0,6,1,0,6),";
+  TString widgets="query.xx(),slider.pt(0,2,0.04,0.12,2),slider.etaMin(0,0.7,0.1,0.7), multiselect.centMin(0,5,10,20), slider.pimax(40,120,1,40,120),checkbox.corr(), slider.setting(0,6,1,0,6),";
   TString options = "tooltips=[('pt', '(@pt)'), ('etaMin', '(@etaMin)'), ('centMin', '(@centMin)'),('pimax', '(@pimax)'), ('corr', '(@corr)'), ('setting', '(@setting)'),('sizeEl', '(@sizeEl)') ] ,"
                       "layout= '((0, 1),(2, plot_height=100,x_visible=1),commonX=0, x_visible=1,y_visible=1,plot_height=450,plot_width=1000)'";
   AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, options);
@@ -40,7 +40,7 @@ void dEdxPerformance2(){
                         "[['pt'], ['pisigma'], {\"size\": 5, 'colorZvar':'setting'}],"
                         "[['pt'], ['pimax'], {\"size\": 5, 'colorZvar':'setting'}],"
                         "['table'] ]";
-  TString widgets="query.xx(),slider.pt(0,2,0.04,0.1,2),slider.etaMin(0,0.7,0.1,0.7), slider.centMin(0,20,5,10), slider.pimax(40,120,1,40,120),slider.corr(0,1,1,0), slider.setting(0,6,1,0,6),";
+  TString widgets="query.xx(),slider.pt(0,2,0.04,0.12,2),slider.etaMin(0,0.7,0.1,0.7), multiselect.centMin(0,5,10,20), slider.pimax(40,120,1,40,120),checkbox.corr(), slider.setting(0,6,1,0,6),";
   TString options = "tooltips=[('pt', '(@pt)'), ('etaMin', '(@etaMin)'), ('centMin', '(@centMin)'),('pimax', '(@pimax)'), ('corr', '(@corr)'), ('setting', '(@setting)')],"
                       "layout= '((0, 1),(2, plot_height=100,x_visible=1),commonX=0, x_visible=1,y_visible=1,plot_height=450,plot_width=1000)'";
   AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, options);
@@ -54,7 +54,7 @@ void dEdxPerformanceEta(){
                         "[['etaMin'], ['pisigma'], {\"size\": 5, 'colorZvar':'setting'}],"
                         "[['etaMin'], ['pimax'], {\"size\": 5, 'colorZvar':'setting'}],"
                         "['table'] ]";
-  TString widgets="query.xx(),slider.pt(0,2,0.02,1),slider.etaMin(0,0.7,0.1,0.,0.8), slider.centMin(0,20,5,10), slider.pimax(40,120,1,40,120),slider.corr(0,1,1,0), slider.setting(0,6,1,0,6),";
+  TString widgets="query.xx(),slider.pt(0,2,0.04,1.02),slider.etaMin(0,0.7,0.1,0.,0.8), multiselect.centMin(0,5,10,20), slider.pimax(40,120,1,40,120),checkbox.corr(), slider.setting(0,6,1,0,6),";
   TString options = "tooltips=[('pt', '(@pt)'), ('etaMin', '(@etaMin)'), ('centMin', '(@centMin)'),('pimax', '(@pimax)'), ('corr', '(@corr)'), ('setting', '(@setting)')],"
                       "layout= '((0, 1),(2, plot_height=100,x_visible=1),commonX=0, x_visible=1,y_visible=1,plot_height=450,plot_width=1000)'";
   AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, options);
