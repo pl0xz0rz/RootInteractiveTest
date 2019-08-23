@@ -20,13 +20,19 @@ void initPython() {
 TTree *  makeABCtree(Int_t nPoints){
     TTreeSRedirector *pcstream = new TTreeSRedirector("treeABCD.root","recreate");
     Double_t abcd[4];
+    Bool_t isABig;
+    Int_t E;
     for (Int_t i=0; i<nPoints; i++){
         for (Int_t j=0; j<4; j++) abcd[j]=gRandom->Rndm();
+        isABig = (abcd[0]>0.5);
+        E = (abcd[1]/0.2);
         (*pcstream)<<"tree"<<
                    "A="<<abcd[0]<<
                    "B="<<abcd[1]<<
                    "C="<<abcd[2]<<
                    "D="<<abcd[3]<<
+                   "E="<<E<<
+                   "Bool="<<isABig<<
                    "\n";
     }
     delete pcstream;
