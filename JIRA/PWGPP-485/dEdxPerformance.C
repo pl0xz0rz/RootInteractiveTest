@@ -20,7 +20,7 @@ void InitTrees() {
   }
 }
 
-void dEdxPerformance1(){
+void dEdxPerformance1(const char *html){
   tree->SetAlias("sizeEl","(elmeanErr<1&&elmax>70)*5");
   TString query = "centMin<21&setting<5&elmax>pimax";
   TString figureArray= "["
@@ -30,11 +30,11 @@ void dEdxPerformance1(){
   TString widgets="query.xx(),slider.pt(0,2,0.04,0.12,2),slider.etaMin(0,0.7,0.1,0.7), multiselect.centMin(0,5,10,20), slider.pimax(40,120,1,40,120),checkbox.corr(), slider.setting(0,6,1,0,6),";
   TString options = "tooltips=[('pt', '(@pt)'), ('etaMin', '(@etaMin)'), ('centMin', '(@centMin)'),('pimax', '(@pimax)'), ('corr', '(@corr)'), ('setting', '(@setting)'),('sizeEl', '(@sizeEl)') ] ,"
                       "layout= '((0, 1),(2, plot_height=100,x_visible=1),commonX=0, x_visible=1,y_visible=1,plot_height=450,plot_width=1000)'";
-  AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, options);
+  AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, options,html);
 }
 
 
-void dEdxPerformance2(){
+void dEdxPerformance2(const char *html){
   TString query = "centMin<21&elmax>50&setting<5&pisigma<10";
   TString figureArray= "["
                         "[['pt'], ['pisigma'], {\"size\": 5, 'colorZvar':'setting'}],"
@@ -43,11 +43,11 @@ void dEdxPerformance2(){
   TString widgets="query.xx(),slider.pt(0,2,0.04,0.12,2),slider.etaMin(0,0.7,0.1,0.7), multiselect.centMin(0,5,10,20), slider.pimax(40,120,1,40,120),checkbox.corr(), slider.setting(0,6,1,0,6),";
   TString options = "tooltips=[('pt', '(@pt)'), ('etaMin', '(@etaMin)'), ('centMin', '(@centMin)'),('pimax', '(@pimax)'), ('corr', '(@corr)'), ('setting', '(@setting)')],"
                       "layout= '((0, 1),(2, plot_height=100,x_visible=1),commonX=0, x_visible=1,y_visible=1,plot_height=450,plot_width=1000)'";
-  AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, options);
+  AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, options,html);
 }
 
 
-void dEdxPerformanceEta(){
+void dEdxPerformanceEta(const char *html){
   tree->SetAlias("sizeEl","(elmeanErr<1)*2");
   TString query = "centMin<21&elmax>50&setting<5&pisigma<10";
   TString figureArray= "["
@@ -57,7 +57,7 @@ void dEdxPerformanceEta(){
   TString widgets="query.xx(),slider.pt(0,2,0.04,1.02),slider.etaMin(0,0.7,0.1,0.,0.8), multiselect.centMin(0,5,10,20), slider.pimax(40,120,1,40,120),checkbox.corr(), slider.setting(0,6,1,0,6),";
   TString options = "tooltips=[('pt', '(@pt)'), ('etaMin', '(@etaMin)'), ('centMin', '(@centMin)'),('pimax', '(@pimax)'), ('corr', '(@corr)'), ('setting', '(@setting)')],"
                       "layout= '((0, 1),(2, plot_height=100,x_visible=1),commonX=0, x_visible=1,y_visible=1,plot_height=450,plot_width=1000)'";
-  AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, options);
+  AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, options,html);
 }
 
 
@@ -65,7 +65,8 @@ void dEdxPerformanceEta(){
 void dEdxPerformance(Int_t i=0){
   if (tree== nullptr) InitTrees();
   tree=trees[i];
-  dEdxPerformance1();
-  dEdxPerformance2();
-  dEdxPerformanceEta();
+    dEdxPerformance1(Form("dedxPtElPi_%d.html",i));
+    dEdxPerformance2(Form("dedxPtResPi_%d.html",i));
+    dEdxPerformanceEta(Form("dedxEta_%d.html",i));
+
 }
