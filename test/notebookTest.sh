@@ -1,8 +1,8 @@
 #clean_ipynb */*/*ipynb
 for note in $(ls */*/*ipynb); do
-    nb-clean clean < ${note}  > ${note}2
     echo mv ${note}2 ${note}
-    mv ${note}2 ${note}
+    jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace ${note}
+
 done
 
 py.test --nbval  $(ls */*/*ipynb | grep -v 460) | tee pytest.log
