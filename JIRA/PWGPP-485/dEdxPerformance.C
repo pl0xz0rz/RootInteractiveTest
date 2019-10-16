@@ -15,13 +15,13 @@ gSystem->AddIncludePath("$AliRoot_SRC/STAT/")
 TTree * tree = nullptr;
 TTree * trees[6];
  AliTreePlayer player; //dumy load of class to trigger TStatToolkit loading - to avoid bug in ROOT
-const char  * inputData[3]={"https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2015/LHC15o/pass1/Params.root", \
-  "https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/Params.root",  \
-        "https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18r/pass1New/Params.root"};
+const char  * inputData[3]={"https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2015/LHC15o/pass1/40MeV_width/Params.root", \
+"https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1/40MeV_width/Params.root", \
+"https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18r/pass1/40MeV_width/Params.root"};
 
 TString options = "tooltips=[('pt', '(@pt)'), ('etaMin', '(@etaMin)'), ('centMin', '(@centMin)'),('pimax', '(@pimax)'), ('corr', '(@corr)'),"
                     "('setting', '(@setting)'),('sizeEl', '(@sizeEl)') ] ,"
-                    "layout= '((0, 1),(2, plot_height=100,x_visible=1),commonX=0, x_visible=1,y_visible=1,plot_height=250,plot_width=1000)'";
+                    "layout= '((0, 1),(2, plot_height=100,x_visible=1),commonX=0, x_visible=1,y_visible=1,plot_height=350,plot_width=1000)'";
 
 
 void InitTrees() {
@@ -49,8 +49,8 @@ void dEdxPerformanceAll(const char *html){
                         "['table'] ]";
   TString optionsAll = "tooltips=[('pt', '(@pt)'), ('etaMin', '(@etaMin)'), ('centMin', '(@centMin)'),('pimax', '(@pimax)'), ('corr', '(@corr)'),"
                     "('setting', '(@setting)'),('sizeEl', '(@sizeEl)'), ('sizePr', '(@sizePr)')] ,"
-                    "layout= '((0, 1,2 ),(3, plot_height=100,x_visible=1),commonX=0, x_visible=1,y_visible=1,plot_height=250,plot_width=1000)'";
-  TString widgets="query.xx(),slider.p(0,2,0.04,0.12,2),slider.etaMin(0,0.7,0.1,0.7), slider.centMin(0,20,5,5), slider.pimax(40,120,1,40,120),checkbox.corr(), multiselect.setting(0,1,2,3,4,5,6),";
+                    "layout= '((0, 1,2 ),(3, plot_height=100,x_visible=1),commonX=0, x_visible=1,y_visible=1,plot_height=350,plot_width=1000)'";
+  TString widgets="query.xx(),slider.p(0,2,0.04,0.12,2),slider.etaMin(0,0.7,0.1,0.0), slider.centMin(0,20,5,5), slider.pimax(40,120,1,40,120),checkbox.corr(), multiselect.setting(0,1,2,3,4,5,6),";
   AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, optionsAll,html);
 }
 
@@ -61,7 +61,7 @@ void dEdxPerformance2(const char *html){
                         "[['p'], ['pisigma'], {\"size\": 5, 'colorZvar':'setting'}],"
                         "[['p'], ['pimax'], {\"size\": 5, 'colorZvar':'setting'}],"
                         "['table'] ]";
-  TString widgets="query.xx(),slider.p(0,2,0.04,0.12,2),slider.etaMin(0,0.7,0.1,0.7), slider.centMin(0,20,5,5), slider.pimax(40,120,1,40,120),checkbox.corr(), multiselect.setting(0,1,2,3,4,5,6),";
+  TString widgets="query.xx(),slider.p(0,2,0.04,0.12,2),slider.etaMin(0,0.7,0.1,0.0), slider.centMin(0,20,5,5), slider.pimax(40,120,1,40,120),checkbox.corr(), multiselect.setting(0,1,2,3,4,5,6),";
   AliRootInteractive::treeBokehDrawArray("tree", query, figureArray, widgets, options,html);
 }
 
