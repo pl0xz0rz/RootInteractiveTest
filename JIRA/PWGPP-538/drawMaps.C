@@ -7,7 +7,6 @@
 */
 
 TTree * treeMap=0;
-
 TString html="";
 
 void LoadFits(const char *path, TString prefix){
@@ -20,10 +19,11 @@ void LoadFits(const char *path, TString prefix){
     ::Info("LoadFits","%s", flist->At(i)->GetName());
     fitName=flist->At(i)->GetName();
     regression  = (AliNDLocalRegression *)fin->Get(fitName.Data());
-    Int_t hashIndex=regression->GetVisualCorrectionIndex(regression->GetName());
+    TString name=prefix+"."+fitName;
+    Int_t hashIndex=regression->GetVisualCorrectionIndex(name.Data());
     AliNDLocalRegression::AddVisualCorrection(regression, hashIndex);
-    treeMap->SetAlias(prefix+regression->GetName(),TString::Format("AliNDLocalRegression::GetCorrND(%d,%s.shiftMCenter,%s.nPileUpPrimCenter,%s.primMultCenter,%s.atglCenter+0)",
-            hashIndex, prefix.Data(),prefix.Data(),prefix.Data(),prefix.Data()).Data());
+    treeMap->SetAlias(name.Data(),TString::Format("AliNDLocalRegression::GetCorrND(%d,shiftMCenter,nPileUpPrimCenter,primMultCenter,atglCenter+0)",
+            hashIndex).Data());
   }
 }
 
@@ -59,8 +59,9 @@ void initTree(){
   treeMap->SetAlias("LHC15oMedC","LHC15o_pass1.hdEdxCShifttMNTglDist.binMedian");
   treeMap->SetAlias("LHC18qMedC","LHC18q_pass1.hdEdxCShifttMNTglDist.binMedian");
   treeMap->SetAlias("LHC18rMedC","LHC18r_pass1.hdEdxCShifttMNTglDist.binMedian");
-  LoadFits("https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/dEdxFitLight.root","LHC15o_pass1.");
-  LoadFits("https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/dEdxFitLight.root","LHC15o_pass1.");
+  LoadFits("https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/dEdxFitLight.root","LHC15o_pass1");
+  LoadFits("https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/dEdxFitLight.root","LHC18q_pass1");
+  LoadFits("https://rootinteractive.web.cern.ch/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18r/pass1New/dEdxFitLight.root","LHC18r_pass1");
 }
 
 
@@ -122,17 +123,17 @@ void makeDrawMedMap(){
 
 
 //
-//void copyData(){
+void copyData(){
 //  rsync -avzt --progeess  mivanov@lxplus.cern.ch:/eos/user/r/rootinteractive/www/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/mapdEdx.root \
 //  /home2/miranov/github/RootInteractiveTest/JIRA/data/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/
 //  rsync -avzt mivanov@lxplus.cern.ch:/eos/user/r/rootinteractive/www/testData/JIRA/PWGPP-538/alice/data/2018/LHC18r/pass1New/mapdEdx.root \
 //  /home2/miranov/github/RootInteractiveTest/JIRA/data/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18r/pass1New/
 //   rsync -avzt --progress  mivanov@lxplus.cern.ch:/eos/user/r/rootinteractive/www/testData/JIRA/PWGPP-538/alice/data/2015/LHC15o/pass1/mapdEdx.root \
 //  /home2/miranov/github/RootInteractiveTest/JIRA/data/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2015/LHC15o/pass1/
-//  rsync -avzt --progress  mivanov@lxplus.cern.ch:/eos/user/r/rootinteractive/www/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/dEdxFitLight.root \
-//  /home2/miranov/github/RootInteractiveTest/JIRA/data/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/
-//  rsync -avzt --progress  mivanov@lxplus.cern.ch:/eos/user/r/rootinteractive/www/testData/JIRA/PWGPP-538/alice/data/2018/LHC18r/pass1New/dEdxFitLight.root \
-//  /home2/miranov/github/RootInteractiveTest/JIRA/data/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18r/pass1New/
-//  rsync -avzt --progress  mivanov@lxplus.cern.ch:/eos/user/r/rootinteractive/www/testData/JIRA/PWGPP-538/alice/data/2015/LHC15o/pass1/dEdxFitLight.root \
-//  /home2/miranov/github/RootInteractiveTest/JIRA/data/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2015/LHC15o/pass1/
-//}
+  rsync -avzt --progress  mivanov@lxplus.cern.ch:/eos/user/r/rootinteractive/www/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/dEdxFitLightA.root \
+  /home2/miranov/github/RootInteractiveTest/JIRA/data/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18q/pass1New/
+  rsync -avzt --progress  mivanov@lxplus.cern.ch:/eos/user/r/rootinteractive/www/testData/JIRA/PWGPP-538/alice/data/2018/LHC18r/pass1New/dEdxFitLightA.root \
+  /home2/miranov/github/RootInteractiveTest/JIRA/data/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2018/LHC18r/pass1New/
+  rsync -avzt --progress  mivanov@lxplus.cern.ch:/eos/user/r/rootinteractive/www/testData/JIRA/PWGPP-538/alice/data/2015/LHC15o/pass1/dEdxFitLightA.root \
+  /home2/miranov/github/RootInteractiveTest/JIRA/data/RootInteractive/testData/JIRA/PWGPP-538/alice/data/2015/LHC15o/pass1/
+}
