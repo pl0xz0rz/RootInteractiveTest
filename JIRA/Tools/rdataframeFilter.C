@@ -2,54 +2,40 @@
   .L ~/github/RootInteractiveTest/JIRA/Tools/rdataframeFilter.C
 
  */
+using RNode = ROOT::RDF::RNode;
 
-void makeRDFrameSnapshot0(TTree *tree) {
-  auto nCr = [](AliESDtrack &p, Int_t row0, Int_t row1) { return p.GetTPCClusterInfo(3, 1, row0, row1); };
-  auto nCl = [](AliESDtrack &p, Int_t row0, Int_t row1) { return p.GetTPCClusterInfo(3, 0, row0, row1); };
-  auto nPos = [](AliESDtrack &p, Float_t bz, Int_t row0, Int_t row1) { return p.GetParameterAtRadius(83 + 0.3 * (row0 + row1), bz, 13); };
-
-  ROOT::RDataFrame df(*tree);
+/// append append Ncr and NCf  position  information
+/// \param df - input data frame
+/// \return   - output data frame
+RNode DFDefineTPCNcrNcfPos(RNode df, std::vector<std::string> &columns){
+  std::string  name="";
   for (Int_t row0 = 0; row0 < 80; row0 += 15) {
-    //std::string  z[] ={"esdTrack.",std::to_string(row0), std::to_string(row0+25)};
-    // df = df.Define(std::string("cr") + std::to_string(row0), nCr, "esdTrack.", row0, row0 + 1);
+    Int_t row1=row0+25;
+    Float_t R = 83+(row0+12.)*0.75;
+    name = Form("NCr%d", row0);
+    df = df.Define(name, [row0,row1](AliESDtrack &p) {return p.GetTPCClusterInfo(3, 1, row0, row1);},{"esdTrack."});
+    columns.push_back(name);
+    name = Form("NCf%d", row0);
+    df = df.Define(name, [row0,row1](AliESDtrack &p) {return p.GetTPCClusterInfo(3, 0, row0, row1);},{"esdTrack."});
+    columns.push_back(name);
+    name = Form("LocalPhi%d", row0);
+    df = df.Define(name, [R](AliESDtrack &p, Float_t bz) {return p.GetParameterAtRadius(R, bz, 10);},{"esdTrack.","Bz"});
+    columns.push_back(name);
+    name = Form("LocalSector%d", row0);
+    df = df.Define(name, [R](AliESDtrack &p, Float_t bz) {return p.GetParameterAtRadius(R, bz, 13);},{"esdTrack.","Bz"});
+    columns.push_back(name);
   }
+  return df;
 }
 
 void makeRDFrameSnapshot0(TTree *tree, const char *outputFile, Float_t bz) { //const char * filter, Long64_t nEvents, Double_t dcaCut) {
   // tree = (TTree *) AliXRDPROOFtoolkit::MakeChain("filtered.list", "highPt", 0, 1000000000, 0, 0);
   // treeEvent = (TTree *) AliXRDPROOFtoolkit::MakeChain("filtered.list", "events", 0, 1000000000, 0, 0);
   //
-
-  auto cr0_25 = [](AliESDtrack &p) { return p.GetTPCClusterInfo(3, 1, 0, 25); };
-  auto cr20_45 = [](AliESDtrack &p) { return p.GetTPCClusterInfo(3, 1, 20, 45); };
-  auto cr40_65 = [](AliESDtrack &p) { return p.GetTPCClusterInfo(3, 1, 40, 65); };
-  auto cr60_85 = [](AliESDtrack &p) { return p.GetTPCClusterInfo(3, 1, 60, 85); };
-  //
-  auto cf0_25 = [](AliESDtrack &p) { return p.GetTPCClusterInfo(3, 0, 0, 25); };
-  auto cf20_45 = [](AliESDtrack &p) { return p.GetTPCClusterInfo(3, 0, 20, 45); };
-  auto cf40_65 = [](AliESDtrack &p) { return p.GetTPCClusterInfo(3, 0, 40, 65); };
-  auto cf60_85 = [](AliESDtrack &p) { return p.GetTPCClusterInfo(3, 0, 60, 85); };
-  //
-  auto pos0_25 = [&](AliESDtrack &p) { return p.GetParameterAtRadius(83 + 0.6 * 12, bz, 10); };
-  auto pos20_45 = [&](AliESDtrack &p) { return p.GetParameterAtRadius(83 + 0.6 * 32, bz, 10); };
-  auto pos40_65 = [&](AliESDtrack &p) { return p.GetParameterAtRadius(83 + 0.6 * 52, bz, 10); };
-  auto pos60_85 = [&](AliESDtrack &p) { return p.GetParameterAtRadius(83 + 0.6 * 72, bz, 10); };
-  auto  bunchCrossing =[](ULong64_t gid) {return gid&0xFFF;};
+ auto  bunchCrossing =[](ULong64_t gid) {return gid&0xFFF;};
   //
   ROOT::RDataFrame *pdf = new ROOT::RDataFrame(*tree);
-  auto df = pdf->Filter("abs(esdTrack.fD)<4&&abs(esdTrack.fZ)<3");
-  df = df.Define("cr0_25", cr0_25, {"esdTrack."});
-  df = df.Define("cr20_45", cr20_45, {"esdTrack."});
-  df = df.Define("cr40_65", cr40_65, {"esdTrack."});
-  df = df.Define("cr60_85", cr60_85, {"esdTrack."});
-  df = df.Define("cf0_25", cf0_25, {"esdTrack."});
-  df = df.Define("cf20_45", cf20_45, {"esdTrack."});
-  df = df.Define("cf40_65", cf40_65, {"esdTrack."});
-  df = df.Define("cf60_85", cf60_85, {"esdTrack."});
-  df = df.Define("pos0_25", pos0_25, {"esdTrack."});
-  df = df.Define("pos20_45", pos20_45, {"esdTrack."});
-  df = df.Define("pos40_65", pos40_65, {"esdTrack."});
-  df = df.Define("pos60_85", pos60_85, {"esdTrack."});
+  RNode df = pdf->Filter("abs(esdTrack.fD)<4&&abs(esdTrack.fZ)<3");
   //
   df = df.Define("bunchCrossing",bunchCrossing,{"gid"});
   df = df.Define("qP",[](AliESDtrack &p) { return p.GetSign()/p.P();},{"esdTrack."});
@@ -64,5 +50,20 @@ void makeRDFrameSnapshot0(TTree *tree, const char *outputFile, Float_t bz) { //c
                                        "cr0_25","cr20_45", "cr40_65","cr60_85",
                                        "cf0_25","cf20_45", "cf40_65","cf60_85",
                                        "pos0_25","pos20_45", "pos40_65","pos60_85"};
+  df= DFDefineTPCNcrNcfPos(df,columns);
   df.Snapshot("tree", outputFile, columns);
+}
+
+void testDataFrame1(){
+  ROOT::RDataFrame d(100); // a RDF that will generate 100 entries (currently empty)
+  int x = -1;
+  auto dcol = d.Define("x", [&x] { return ++x; }).Define("xx", [&x] { return x*x; });
+  dcol.Snapshot("xxx","xxx.root");
+}
+
+void testDataFrame2(){
+  ROOT::RDataFrame d(100); // a RDF that will generate 100 entries (currently empty)
+  int x = -1;
+  RNode  dcol = (RNode) (d.Define("x", [&x] { return ++x; }).Define("xx", [&x] { return x*x; }));
+  dcol.Snapshot("xxx","xxx.root");
 }
