@@ -18,7 +18,8 @@ def curve_fit(fitfunc,x,y,params, optimizer_options={}, **kwargs):
             "atol":1e-3,
             "max_iterations":1000,
             "optimizer":torch.optim.LBFGS,
-            "lossfunc":mse
+            "lossfunc":mse,
+            "tolerance_change":0.1
             }
     options.update(kwargs)
     
@@ -27,7 +28,8 @@ def curve_fit(fitfunc,x,y,params, optimizer_options={}, **kwargs):
     atol = options["atol"]
     lossfunc = options["lossfunc"]
     
-    for i in range(options["max_iterations"]):
+    #for i in range(options["max_iterations"]):
+    for i in range(0,1):
         def closure():
             optimizer.zero_grad()
             y_appx = fitfunc(x,*params)
