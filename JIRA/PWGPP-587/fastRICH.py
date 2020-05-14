@@ -1,3 +1,10 @@
+import numpy as np;
+import numpy as np
+import scipy.optimize
+from iminuit import Minuit
+import time
+#import matplotlib.pyplot as plt
+# import torch
 
 def angleRICH(detetoctorParam, p, mass, Z, phi, eta):
     """
@@ -28,15 +35,15 @@ def angularResolutionRICH(detectorParam, p, mass, phi,eta):
     :param eta:
     :return: xxx
     """
-    length0=sum()
-    length=length0*sqrt(1+tan(phi)*tan(phi)+ tan(eta)*tan(eta))
+    #length0=sum()
+    #length=length0*sqrt(1+tan(phi)*tan(phi)+ tan(eta)*tan(eta))
 
-    nCherenkov=length
-
-    return
+    #nCherenkov=length
+    return 1
 
 def angleRICHTrack(detectorParam, trackParam):
     return
 def angularResolutionRICHtrack(detectorParam, trackParam):
     return
 
+print(angularResolutionRICH(0,0,0,0,0) )
