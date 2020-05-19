@@ -25,10 +25,11 @@ data_lin = data.testdata()
 data_lin.setfunclin()
 
 #pointlist = [10,100,1000,10000,100000,1000000]
-#pointlist = [10, 100, 1000,10000, 100000]
-pointlist = [1000, 10000]
-nfits = 200
+pointlist = [10, 100, 1000,10000, 100000]
+#pointlist = [1000, 10000]
+nfits = 100
 sigma0=0.1
+eps=1e-3
 
 lin_parameter_list = []
 lin_parameter_list_org = []
@@ -42,7 +43,10 @@ def cuda_curve_fit_sync(*args, **kwargs):
     torch.cuda.synchronize()
     return x
 
-def create_benchmark_df(name,optimizers,params_true,params,covs,npoints,idx):
+def bootstrap_weights(nfits,npoints):
+    return np.stack(np.bincount(np.random.randint(0,npoints,npoints),minlength=npoints) for i in range(nfits))
+
+def create_benchmark_df(name,optimizers,params_true,params,covs,npoints,idx,chisq,chisq_transformed):
     params = np.stack(params)
     covs = np.stack(covs)
     params_true = list(zip(*params_true))
@@ -54,7 +58,7 @@ def create_benchmark_df(name,optimizers,params_true,params,covs,npoints,idx):
     return df
 
 def benchmark_linear(pointList):
-    
+
     params = []
     covs = []
     params_true = []
@@ -68,7 +72,7 @@ def benchmark_linear(pointList):
         data_lin.setxy(el,sigma0)
         lin_parameter_list_org.append(data_lin.params)
         #weights = np.random.rand(nfits,el)*2
-        weights = np.random.poisson( lam=1.,size=(nfits,el))
+        weights = bootstrap_weights(nfits,el)+eps
         # bfgsfitter
         t1_start = time.time()
         for i in range(nfits):
@@ -112,7 +116,7 @@ def benchmark_linear(pointList):
         print(q)
         print(t1_stop - t1_start)
 
-        
+
         # pytorch CPU
         t1_start = time.time()
         x = torch.from_numpy(data_lin.x)
@@ -131,7 +135,7 @@ def benchmark_linear(pointList):
         comp_time_lin.append(t1_stop - t1_start)
         print(p)
         print(q)
-        print(t1_stop - t1_start)        
+        print(t1_stop - t1_start)
         # pytorch GPU
         """
         t1_start = time.time()
@@ -152,19 +156,20 @@ def benchmark_linear(pointList):
 
 
 def benchmark_sin(pointlist):
-    
+
     params = []
     covs = []
     params_true = []
     optimizers = []
     npoints = []
     weights_index = []
-    
+
     for idx, el in enumerate(pointlist):
-        
+
         comp_time_sin = []
         #weights = np.random.rand(nfits,el)*2
-        weights = np.random.poisson(lam=1., size=(nfits, el))
+        #weights = np.random.poisson(lam=1., size=(nfits, el))
+        weights = bootstrap_weights(nfits,el)+eps
         sin_fitter = bfgsfitter(data.testfunc_sin)
         data_sin.setxy(el,sigma0)
 
@@ -184,7 +189,7 @@ def benchmark_sin(pointlist):
         params_true.append(data_sin.params)
         optimizers.append("Tensorflow_BFGS")
         npoints.append(el)
-        
+
         # second fit after initializiation
         t1_start = time.time()
         for i in range(nfits):
@@ -204,13 +209,13 @@ def benchmark_sin(pointlist):
             optimizers.append("Scipy_LM")
             npoints.append(el)
             weights_index.append(i)
-            
+
         t1_stop = time.time()
         comp_time_sin.append(t1_stop - t1_start)
         # print(p)
         # print(q)
 
-        
+
         # pytorch CPU
         t1_start = time.time()
         x = torch.from_numpy(data_sin.x)
@@ -236,7 +241,7 @@ def benchmark_sin(pointlist):
 
 
 def benchmark_epx(pointlist):
-    
+
     params = []
     covs = []
     params_true = []
@@ -247,7 +252,8 @@ def benchmark_epx(pointlist):
     for idx, el in enumerate(pointlist):
         comp_time_exp = []
         #weights = np.random.rand(nfits,el)*2
-        weights = np.random.poisson(lam=1., size=(nfits, el))
+        #weights = np.random.poisson(lam=1., size=(nfits, el))
+        weights = bootstrap_weights(nfits,el)+eps
         exp_fitter = bfgsfitter(data.testfunc_exp)
         data_exp.setxy(el,sigma0)
         # bfgsfitter
@@ -266,7 +272,7 @@ def benchmark_epx(pointlist):
         params_true.append(data_exp.params)
         optimizers.append("Tensorflow_BFGS")
         npoints.append(el)
-        
+
         # second fit after initializiation
         t1_start = time.time()
 
@@ -292,7 +298,7 @@ def benchmark_epx(pointlist):
         print(p)
         print(q)
 
-        
+
         # pytorch CPU
         t1_start = time.time()
         x = torch.from_numpy(data_exp.x)
@@ -312,12 +318,12 @@ def benchmark_epx(pointlist):
         print(q.numpy())
         print(t1_stop - t1_start)
 
-        
+
         explist.append(comp_time_exp)
-    
+
     name = "exp"
     df = create_benchmark_df(name,optimizers,params_true,params,covs,npoints,weights_index)
-    
+
     return explist,df
 
 
