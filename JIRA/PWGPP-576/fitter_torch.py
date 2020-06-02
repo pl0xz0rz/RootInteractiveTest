@@ -98,6 +98,7 @@ def curve_fit(fitfunc,x,y,params, weights = None, sigma = None, lossfunc = None,
         return params,hessian.detach().pinverse()*loss
     else:
         hessian = torch.autograd.functional.hessian(lambda *a:lossfunc(y,fitfunc(x,*a),weights,invsigma),tuple(params))
+        hessian = torch.stack([torch.stack([hessian[j][i] for i in range(len(params))]) for j in range(len(params))],1)
         return params,hessian.detach().pinverse()*loss
     
     return params,hessian.detach().pinverse()*loss
@@ -129,7 +130,7 @@ def curve_fit_BS(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,fit
         else:
             p_init = [torch.tensor(i,requires_grad=True) for i in p0]
         p,q = curve_fit(fitfunc,x,y,p_init,weights=weights[i],sigma=sigma0,**fitter_options)
-        fitted_params.append(np.concatenate([j.detach().numpy() for j in p]))
+        fitted_params.append(np.hstack([j.detach().numpy() for j in p]))
         errors.append(np.sqrt(np.diag(q.numpy())))
         weights_idx.append(i)
         with torch.no_grad():
