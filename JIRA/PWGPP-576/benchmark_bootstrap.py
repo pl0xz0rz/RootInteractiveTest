@@ -44,7 +44,11 @@ def benchmark_lin():
         for ifit in range(nfits):
             data_lin.setxy(el,sigma0)
             p0 = np.random.normal(data_lin.params,sigma_initial_guess,[nfits,2])
+            
             fitter = bfgsfitter(data.testfunc_lin_np)
+            p,q = fitter.curve_fit(data_lin.x,data_lin.y,init_params=p0[0],sigma0=sigma0)
+            print(p.numpy())
+            print(q.numpy())
             t0 = time.time()
             df0,weights = fitter.curve_fit_BS(data_lin.x, data_lin.y,init_params=p0,sigma0=sigma0,nbootstrap=nbootstrap)
             t1 = time.time()
@@ -53,6 +57,9 @@ def benchmark_lin():
             df0["time"] = (t1-t0)/nbootstrap
             for a,b in enumerate(data_lin.params):
                 df0[str.format("params_true_{}",a)]=b
+            p, q = scipy.optimize.curve_fit(data.testfunc_lin_np, data_lin.x, data_lin.y,sigma=sigma0*np.ones_like(data_lin.y),p0=p0[0])
+            print(p)
+            print(q)
             t0 = time.time()
             df0,weights=bootstrap_scipy(data_lin.x, data_lin.y,data.testfunc_lin_np,init_params=p0,weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
             t1 = time.time()
@@ -61,8 +68,11 @@ def benchmark_lin():
             for a,b in enumerate(data_lin.params):
                 df0[str.format("params_true_{}",a)]=b
             frames.append(df0)
+            p,q = fitter_torch.curve_fit(data.testfunc_lin_torch,torch.from_numpy(data_lin.x),torch.from_numpy(data_lin.y),[torch.tensor(p0[0],requires_grad=True)],sigma=sigma0)
+            print(p[0].detach().numpy())
+            print(q.numpy())
             t0 = time.time()
-            df0,weights=fitter_torch.curve_fit_BS(data_lin.x, data_lin.y,data.testfunc_lin_torch,init_params=torch.from_numpy(p0),weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
+            df0,weights=fitter_torch.curve_fit_BS(data_lin.x, data_lin.y,data.testfunc_lin_np,init_params=p0,weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
             t1 = time.time()
             df0["fit_idx"] = ifit + nfits*idx
             df0["time"] = (t1-t0)/nbootstrap
