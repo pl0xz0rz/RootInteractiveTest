@@ -140,7 +140,7 @@ class bfgsfitter:
             paramsBS.append(p.numpy())
             errorsBS.append(np.sqrt(np.diag(q.numpy())))
             weights_idx.append(i)
-            chisq.append(tf.reduce_sum(((self.y_pred - self.y_true )/sigma0)**2))
+            chisq.append(tf.reduce_sum(((self.y_pred - self.y_true )/sigma0)**2).numpy())
             if "weights" in self.options["weights"]:
                 chisq_transformed.append(self.options["loss"](self.y_pred,self.y_true,self.options["weights"]["weights"]).numpy())
             else:
