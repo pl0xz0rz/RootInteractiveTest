@@ -40,6 +40,14 @@ def cuda_curve_fit_sync(*args, **kwargs):
 def benchmark_lin():
 
     frames = []
+    params = []
+    params_true = []
+    fit_idx = []
+    fitter_name = []
+    bs_mean = []
+    bs_median = []
+    bs_std = []
+    number_points = []
     for idx, el in enumerate(pointlist):
         for ifit in range(nfits):
             data_lin.setxy(el,sigma0)
@@ -49,38 +57,76 @@ def benchmark_lin():
             p,q = fitter.curve_fit(data_lin.x,data_lin.y,init_params=p0[0],sigma0=sigma0)
             print(p.numpy())
             print(q.numpy())
+            params.append(p.numpy())
+            params_true.append(data_lin.params)
+            number_points.append(el)
+            fit_idx.append(ifit + nfits*idx)
+            fitter_name.append("Tensorflow_BFGS")
             t0 = time.time()
-            df0,weights = fitter.curve_fit_BS(data_lin.x, data_lin.y,init_params=p0,sigma0=sigma0,nbootstrap=nbootstrap)
+            df0,mean,median,std,weights = fitter.curve_fit_BS(data_lin.x, data_lin.y,init_params=p0,sigma0=sigma0,nbootstrap=nbootstrap)
             t1 = time.time()
             frames.append(df0)
             df0["fit_idx"] = ifit + nfits*idx
             df0["time"] = (t1-t0)/nbootstrap
             for a,b in enumerate(data_lin.params):
                 df0[str.format("params_true_{}",a)]=b
+            bs_mean.append(mean)
+            bs_median.append(median)
+            bs_std.append(std)
+            
             p, q = scipy.optimize.curve_fit(data.testfunc_lin_np, data_lin.x, data_lin.y,sigma=sigma0*np.ones_like(data_lin.y),p0=p0[0])
             print(p)
             print(q)
+            params.append(p)
+            params_true.append(data_lin.params)
+            number_points.append(el)
+            fit_idx.append(ifit + nfits*idx)
+            fitter_name.append("Scipy_LM")
             t0 = time.time()
-            df0,weights=bootstrap_scipy(data_lin.x, data_lin.y,data.testfunc_lin_np,init_params=p0,weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
+            df0,mean,median,std,_=bootstrap_scipy(data_lin.x, data_lin.y,data.testfunc_lin_np,init_params=p0,weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
             t1 = time.time()
             df0["fit_idx"] = ifit + nfits*idx
             df0["time"] = (t1-t0)/nbootstrap
             for a,b in enumerate(data_lin.params):
                 df0[str.format("params_true_{}",a)]=b
             frames.append(df0)
+            bs_mean.append(mean)
+            bs_median.append(median)
+            bs_std.append(std)
+            
             p,q = fitter_torch.curve_fit(data.testfunc_lin_torch,torch.from_numpy(data_lin.x),torch.from_numpy(data_lin.y),[torch.tensor(p0[0],requires_grad=True)],sigma=sigma0)
             print(p[0].detach().numpy())
             print(q.numpy())
+            params.append(np.hstack([j.detach().numpy() for j in p]))
+            params_true.append(data_lin.params)
+            number_points.append(el)
+            fit_idx.append(ifit + nfits*idx)
+            fitter_name.append("TPytorch_LBFGS")
             t0 = time.time()
-            df0,weights=fitter_torch.curve_fit_BS(data_lin.x, data_lin.y,data.testfunc_lin_np,init_params=p0,weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
+            df0,mean,median,std,_=fitter_torch.curve_fit_BS(data_lin.x, data_lin.y,data.testfunc_lin_np,init_params=p0,weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
             t1 = time.time()
             df0["fit_idx"] = ifit + nfits*idx
             df0["time"] = (t1-t0)/nbootstrap
             for a,b in enumerate(data_lin.params):
                 df0[str.format("params_true_{}",a)]=b
             frames.append(df0)
+            bs_mean.append(mean)
+            bs_median.append(median)
+            bs_std.append(std)
     df = pd.concat(frames)
-    return df
+    bs_mean = np.stack(bs_mean)
+    bs_median = np.stack(bs_median)
+    bs_std = np.stack(bs_std)
+    params = np.stack(params)
+    params_true = list(zip(*params_true))
+    d = {"fitter_name":fitter_name,"fit_idx":fit_idx,"number_points":number_points}
+    d.update({str.format("params_{}",i):params[:,i] for i in range(params.shape[1])})
+    d.update({str.format("bs_mean_{}",i):params[:,i] for i in range(bs_mean.shape[1])})
+    d.update({str.format("bs_median_{}",i):params[:,i] for i in range(bs_median.shape[1])})
+    d.update({str.format("bs_std_{}",i):params[:,i] for i in range(bs_std.shape[1])})
+    d.update({str.format("params_true_{}",idx):el for idx,el in enumerate(params_true)})
+    df1 = pd.DataFrame(d)
+    return df,df1
 
 def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initial_guess,generate_params,xmin=-1,xmax=1,weights=None):
     frames = []
@@ -93,7 +139,7 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
         p0 = np.random.normal(data_lin.params,sigma_initial_guess,[nfits,2])
         fitter = bfgsfitter(testfunc)
         t0 = time.time()
-        df0,weights = fitter.curve_fit_BS(x, y,init_params=p0,sigma0=sigma0,nbootstrap=nbootstrap)
+        df0,mean,median,std,weights = fitter.curve_fit_BS(x, y,init_params=p0,sigma0=sigma0,nbootstrap=nbootstrap)
         t1 = time.time()
         frames.append(df0)
         df0["fit_idx"] = ifit
@@ -101,7 +147,7 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
         for a,b in enumerate(params):
             df0[str.format("params_true_{}",a)]=b
         t0 = time.time()
-        df0,weights=bootstrap_scipy(x, y,testfunc,init_params=p0,weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
+        df0,mean,median,std,_=bootstrap_scipy(x, y,testfunc,init_params=p0,weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
         t1 = time.time()
         df0["fit_idx"] = ifit
         df0["time"] = (t1-t0)/nbootstrap
@@ -109,7 +155,7 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
             df0[str.format("params_true_{}",a)]=b
         frames.append(df0)
         t0 = time.time()
-        df0,weights=fitter_torch.curve_fit_BS(x, y,testfunc,init_params=torch.from_numpy(p0),weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
+        df0,mean,median,std,_=fitter_torch.curve_fit_BS(x, y,testfunc,init_params=torch.from_numpy(p0),weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
         t1 = time.time()
         df0["fit_idx"] = ifit
         df0["time"] = (t1-t0)/nbootstrap
@@ -152,8 +198,13 @@ def bootstrap_scipy(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,
         chisq_transformed.append(np.sum(weights[i]*((data.testfunc_lin_np(data_lin.x,*p)-data_lin.y)/sigma0)**2))
         
     df = create_benchmark_df(fitter_name,fitted_params,errors,n,weights_idx,chisq,chisq_transformed)
-    return df,weights
+    params = np.stack(fitted_params)
+    mean = np.mean(params,0)
+    median = np.median(params,0)
+    std = np.std(params,0)
+    return df,mean,median,std,weights
 
-df = benchmark_lin()
+df,df1 = benchmark_lin()
 
-df.to_pickle("benchmark_linear.pkl")
+df.to_pickle("benchmark_linear_eachfit.pkl")
+df1.to_pickle("benchmark_linear_bootstrap.pkl")

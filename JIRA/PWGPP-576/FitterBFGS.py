@@ -145,8 +145,14 @@ class bfgsfitter:
                 chisq_transformed.append(self.options["loss"](self.y_pred,self.y_true,self.options["weights"]["weights"]).numpy())
             else:
                 chisq_transformed.append(chisq[-1])
+                
+        params = np.stack(paramsBS)
+        mean = np.mean(params,0)
+        median = np.median(params,0)
+        std = np.std(params,0)
+            
         df = create_benchmark_df(fitter_name,paramsBS,errorsBS,npoints,weights_idx,chisq,chisq_transformed) 
-        return df,weights
+        return df,mean,median,std,weights
 
 def create_benchmark_df(optimizers,params,covs,npoints,idx,chisq,chisq_transformed):
     params = np.stack(params)

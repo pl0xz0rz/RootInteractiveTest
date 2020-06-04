@@ -139,9 +139,13 @@ def curve_fit_BS(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,fit
             loss_transformed = torch.sum(weights[i]*((y-y_fit)/sigma0)**2)  
         chisq.append(loss.numpy())
         chisq_transformed.append(loss_transformed.numpy())
+    params = np.stack(fitted_params)
+    mean = np.mean(params,0)
+    median = np.median(params,0)
+    std = np.std(params,0)
         
     df = create_benchmark_df(fitter_name,fitted_params,errors,n,weights_idx,chisq,chisq_transformed)    
-    return df,weights
+    return df,mean,median,std,weights
 
 def create_benchmark_df(optimizers,params,covs,npoints,idx,chisq,chisq_transformed):
     params = np.stack(params)
