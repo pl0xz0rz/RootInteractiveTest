@@ -121,9 +121,9 @@ def benchmark_lin():
     params_true = list(zip(*params_true))
     d = {"fitter_name":fitter_name,"fit_idx":fit_idx,"number_points":number_points}
     d.update({str.format("params_{}",i):params[:,i] for i in range(params.shape[1])})
-    d.update({str.format("bs_mean_{}",i):params[:,i] for i in range(bs_mean.shape[1])})
-    d.update({str.format("bs_median_{}",i):params[:,i] for i in range(bs_median.shape[1])})
-    d.update({str.format("bs_std_{}",i):params[:,i] for i in range(bs_std.shape[1])})
+    d.update({str.format("bs_mean_{}",i):bs_mean[:,i] for i in range(bs_mean.shape[1])})
+    d.update({str.format("bs_median_{}",i):bs_median[:,i] for i in range(bs_median.shape[1])})
+    d.update({str.format("bs_std_{}",i):bs_std[:,i] for i in range(bs_std.shape[1])})
     d.update({str.format("params_true_{}",idx):el for idx,el in enumerate(params_true)})
     df1 = pd.DataFrame(d)
     return df,df1
