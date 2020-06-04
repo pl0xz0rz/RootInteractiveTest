@@ -41,6 +41,7 @@ def benchmark_lin():
 
     frames = []
     params = []
+    errors = []
     params_true = []
     fit_idx = []
     fitter_name = []
@@ -48,6 +49,7 @@ def benchmark_lin():
     bs_median = []
     bs_std = []
     number_points = []
+    t = []
     for idx, el in enumerate(pointlist):
         for ifit in range(nfits):
             data_lin.setxy(el,sigma0)
@@ -58,6 +60,7 @@ def benchmark_lin():
             print(p.numpy())
             print(q.numpy())
             params.append(p.numpy())
+            errors.append(np.sqrt(np.diag(q.numpy())))
             params_true.append(data_lin.params)
             number_points.append(el)
             fit_idx.append(ifit + nfits*idx)
@@ -67,7 +70,8 @@ def benchmark_lin():
             t1 = time.time()
             frames.append(df0)
             df0["fit_idx"] = ifit + nfits*idx
-            df0["time"] = (t1-t0)/nbootstrap
+            #df0["time"] = (t1-t0)/nbootstrap
+            t.append(t1-t0)
             for a,b in enumerate(data_lin.params):
                 df0[str.format("params_true_{}",a)]=b
             bs_mean.append(mean)
@@ -78,6 +82,7 @@ def benchmark_lin():
             print(p)
             print(q)
             params.append(p)
+            errors.append(np.sqrt(np.diag(q)))
             params_true.append(data_lin.params)
             number_points.append(el)
             fit_idx.append(ifit + nfits*idx)
@@ -86,7 +91,8 @@ def benchmark_lin():
             df0,mean,median,std,_=bootstrap_scipy(data_lin.x, data_lin.y,data.testfunc_lin_np,init_params=p0,weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
             t1 = time.time()
             df0["fit_idx"] = ifit + nfits*idx
-            df0["time"] = (t1-t0)/nbootstrap
+            #df0["time"] = (t1-t0)/nbootstrap
+            t.append(t1-t0)
             for a,b in enumerate(data_lin.params):
                 df0[str.format("params_true_{}",a)]=b
             frames.append(df0)
@@ -98,6 +104,7 @@ def benchmark_lin():
             print(p[0].detach().numpy())
             print(q.numpy())
             params.append(np.hstack([j.detach().numpy() for j in p]))
+            errors.append(np.sqrt(np.diag(q.numpy())))
             params_true.append(data_lin.params)
             number_points.append(el)
             fit_idx.append(ifit + nfits*idx)
@@ -106,7 +113,8 @@ def benchmark_lin():
             df0,mean,median,std,_=fitter_torch.curve_fit_BS(data_lin.x, data_lin.y,data.testfunc_lin_np,init_params=p0,weights=weights,sigma0=sigma0,nbootstrap=nbootstrap)
             t1 = time.time()
             df0["fit_idx"] = ifit + nfits*idx
-            df0["time"] = (t1-t0)/nbootstrap
+            #df0["time"] = (t1-t0)/nbootstrap
+            t.append(t1-t0)
             for a,b in enumerate(data_lin.params):
                 df0[str.format("params_true_{}",a)]=b
             frames.append(df0)
@@ -118,13 +126,16 @@ def benchmark_lin():
     bs_median = np.stack(bs_median)
     bs_std = np.stack(bs_std)
     params = np.stack(params)
+    errors = np.stack(errors)
     params_true = list(zip(*params_true))
-    d = {"fitter_name":fitter_name,"fit_idx":fit_idx,"number_points":number_points}
+    d = {"fitter_name":fitter_name,"fit_idx":fit_idx,"number_points":number_points,"time":t}
     d.update({str.format("params_{}",i):params[:,i] for i in range(params.shape[1])})
+    d.update({str.format("errors_{}",i):errors[:,i] for i in range(errors.shape[1])})
     d.update({str.format("bs_mean_{}",i):bs_mean[:,i] for i in range(bs_mean.shape[1])})
     d.update({str.format("bs_median_{}",i):bs_median[:,i] for i in range(bs_median.shape[1])})
     d.update({str.format("bs_std_{}",i):bs_std[:,i] for i in range(bs_std.shape[1])})
     d.update({str.format("params_true_{}",idx):el for idx,el in enumerate(params_true)})
+    
     df1 = pd.DataFrame(d)
     return df,df1
 
