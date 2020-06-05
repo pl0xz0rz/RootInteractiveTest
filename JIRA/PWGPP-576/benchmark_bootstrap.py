@@ -128,7 +128,7 @@ def benchmark_lin():
     params = np.stack(params)
     errors = np.stack(errors)
     params_true = list(zip(*params_true))
-    d = {"fitter_name":fitter_name,"fit_idx":fit_idx,"number_points":number_points,"time":t}
+    d = {"fitter_name":fitter_name,"fit_idx":fit_idx,"number_points":number_points,"time":t,"nbootstrap":nbootstrap}
     d.update({str.format("params_{}",i):params[:,i] for i in range(params.shape[1])})
     d.update({str.format("errors_{}",i):errors[:,i] for i in range(errors.shape[1])})
     d.update({str.format("bs_mean_{}",i):bs_mean[:,i] for i in range(bs_mean.shape[1])})
