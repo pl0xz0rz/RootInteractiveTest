@@ -50,15 +50,14 @@ def benchmark_lin():
     bs_std = []
     number_points = []
     t = []
+    fitterTF = bfgsfitter(data.testfunc_lin_np)
     for idx, el in enumerate(pointlist):
         for ifit in range(nfits):
+            print("idx:", idx, "Fit ",ifit)
             data_lin.setxy(el,sigma0)
             p0 = np.random.normal(data_lin.params,sigma_initial_guess,[nfits,2])
-            
-            fitter = bfgsfitter(data.testfunc_lin_np)
-            p,q = fitter.curve_fit(data_lin.x,data_lin.y,init_params=p0[0],sigma0=sigma0)
-            print(p.numpy())
-            print(q.numpy())
+            p,q = fitterTF.curve_fit(data_lin.x,data_lin.y,init_params=p0[0],sigma0=sigma0)
+            #print(p.numpy()); print(q.numpy())
             params.append(p.numpy())
             errors.append(np.sqrt(np.diag(q.numpy())))
             params_true.append(data_lin.params)
@@ -66,7 +65,7 @@ def benchmark_lin():
             fit_idx.append(ifit + nfits*idx)
             fitter_name.append("Tensorflow_BFGS")
             t0 = time.time()
-            df0,mean,median,std,weights = fitter.curve_fit_BS(data_lin.x, data_lin.y,init_params=p0,sigma0=sigma0,nbootstrap=nbootstrap)
+            df0,mean,median,std,weights = fitterTF.curve_fit_BS(data_lin.x, data_lin.y,init_params=p0,sigma0=sigma0,nbootstrap=nbootstrap)
             t1 = time.time()
             frames.append(df0)
             df0["fit_idx"] = ifit + nfits*idx
@@ -77,10 +76,9 @@ def benchmark_lin():
             bs_mean.append(mean)
             bs_median.append(median)
             bs_std.append(std)
-            
+
             p, q = scipy.optimize.curve_fit(data.testfunc_lin_np, data_lin.x, data_lin.y,sigma=sigma0*np.ones_like(data_lin.y),p0=p0[0])
-            print(p)
-            print(q)
+            #print(p); print(q)
             params.append(p)
             errors.append(np.sqrt(np.diag(q)))
             params_true.append(data_lin.params)
@@ -99,10 +97,9 @@ def benchmark_lin():
             bs_mean.append(mean)
             bs_median.append(median)
             bs_std.append(std)
-            
+
             p,q = fitter_torch.curve_fit(data.testfunc_lin_torch,torch.from_numpy(data_lin.x),torch.from_numpy(data_lin.y),[torch.tensor(p0[0],requires_grad=True)],sigma=sigma0)
-            print(p[0].detach().numpy())
-            print(q.numpy())
+            #print(p[0].detach().numpy()); print(q.numpy())
             params.append(np.hstack([j.detach().numpy() for j in p]))
             errors.append(np.sqrt(np.diag(q.numpy())))
             params_true.append(data_lin.params)
@@ -135,7 +132,7 @@ def benchmark_lin():
     d.update({str.format("bs_median_{}",i):bs_median[:,i] for i in range(bs_median.shape[1])})
     d.update({str.format("bs_std_{}",i):bs_std[:,i] for i in range(bs_std.shape[1])})
     d.update({str.format("params_true_{}",idx):el for idx,el in enumerate(params_true)})
-    
+
     df1 = pd.DataFrame(d)
     return df,df1
 
@@ -174,7 +171,7 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
             df0[str.format("params_true_{}",a)]=b
         frames.append(df0)
     df = pd.concat(frames)
-    return df    
+    return df
 
 def bootstrap_weights(nfits,npoints):
     return np.stack([np.bincount(np.random.randint(0,npoints,npoints),minlength=npoints) for i in range(nfits)])
@@ -196,10 +193,10 @@ def bootstrap_scipy(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,
     errors=[]
 
     n = y.shape[0]
-    
+
     if weights is None:
         weights = bootstrap_weights(nbootstrap,n)
-    
+
     for i in range(nbootstrap):
         p,q = scipy.optimize.curve_fit(fitfunc,x,y,sigma=sigma0/np.sqrt(weights[i]),p0=init_params[i],**fitter_options)
         fitted_params.append(p)
@@ -207,7 +204,7 @@ def bootstrap_scipy(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,
         weights_idx.append(i)
         chisq.append(np.sum(((data.testfunc_lin_np(data_lin.x,*p)-data_lin.y)/sigma0)**2))
         chisq_transformed.append(np.sum(weights[i]*((data.testfunc_lin_np(data_lin.x,*p)-data_lin.y)/sigma0)**2))
-        
+
     df = create_benchmark_df(fitter_name,fitted_params,errors,n,weights_idx,chisq,chisq_transformed)
     params = np.stack(fitted_params)
     mean = np.mean(params,0)
