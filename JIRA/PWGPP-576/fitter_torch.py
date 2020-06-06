@@ -21,7 +21,7 @@ def mse(x,y,weights,invsigma):
     @param y_true: target value
     @return: mse
     """
-    return torch.sum(weights*(invsigma*(x-y)**2))
+    return torch.sum(weights*((invsigma*(x-y))**2))
 
 def mse_matrix_sigma(x,y,weights,invsigma):
     eps = x-y

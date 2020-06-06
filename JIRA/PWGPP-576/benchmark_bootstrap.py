@@ -50,15 +50,14 @@ def benchmark_lin():
     bs_std = []
     number_points = []
     t = []
+    fitterTF = bfgsfitter(data.testfunc_lin_np)
     for idx, el in enumerate(pointlist):
         for ifit in range(nfits):
+            print("idx:", idx, "Fit ",ifit)
             data_lin.setxy(el,sigma0)
             p0 = np.random.normal(data_lin.params,sigma_initial_guess,[nfits,2])
-            
-            fitter = bfgsfitter(data.testfunc_lin_np)
-            p,q = fitter.curve_fit(data_lin.x,data_lin.y,init_params=p0[0],sigma0=sigma0)
-            print(p.numpy())
-            print(q.numpy())
+            p,q = fitterTF.curve_fit(data_lin.x,data_lin.y,init_params=p0[0],sigma0=sigma0)
+            #print(p.numpy()); print(q.numpy())
             params.append(p.numpy())
             errors.append(np.sqrt(np.diag(q.numpy())))
             params_true.append(data_lin.params)
@@ -66,7 +65,7 @@ def benchmark_lin():
             fit_idx.append(ifit + nfits*idx)
             fitter_name.append("Tensorflow_BFGS")
             t0 = time.time()
-            df0,mean,median,std,weights = fitter.curve_fit_BS(data_lin.x, data_lin.y,init_params=p0,sigma0=sigma0,nbootstrap=nbootstrap)
+            df0,mean,median,std,weights = fitterTF.curve_fit_BS(data_lin.x, data_lin.y,init_params=p0,sigma0=sigma0,nbootstrap=nbootstrap)
             t1 = time.time()
             frames.append(df0)
             df0["fit_idx"] = ifit + nfits*idx
@@ -79,8 +78,7 @@ def benchmark_lin():
             bs_std.append(std)
             
             p, q = scipy.optimize.curve_fit(data.testfunc_lin_np, data_lin.x, data_lin.y,sigma=sigma0*np.ones_like(data_lin.y),p0=p0[0])
-            print(p)
-            print(q)
+            #print(p); print(q)
             params.append(p)
             errors.append(np.sqrt(np.diag(q)))
             params_true.append(data_lin.params)
@@ -101,8 +99,7 @@ def benchmark_lin():
             bs_std.append(std)
             
             p,q = fitter_torch.curve_fit(data.testfunc_lin_torch,torch.from_numpy(data_lin.x),torch.from_numpy(data_lin.y),[torch.tensor(p0[0],requires_grad=True)],sigma=sigma0)
-            print(p[0].detach().numpy())
-            print(q.numpy())
+            #print(p[0].detach().numpy()); print(q.numpy())
             params.append(np.hstack([j.detach().numpy() for j in p]))
             errors.append(np.sqrt(np.diag(q.numpy())))
             params_true.append(data_lin.params)
