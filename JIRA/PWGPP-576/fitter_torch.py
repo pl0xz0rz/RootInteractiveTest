@@ -28,7 +28,7 @@ def mse_matrix_sigma(x,y,weights,invsigma):
     v = torch.cholesky_solve(eps,invsigma)
     return (weights*eps).dot(v)
 
-def curve_fit(fitfunc,x,y,params, weights = None, sigma = None, lossfunc = None, optimizer = 'lbfgs', ytol = 1e-5, xtol = 1e-5, max_steps = 20, optimizer_options={}):
+def curve_fit(fitfunc,x,y,params, weights = 1, sigma = None, lossfunc = None, optimizer = 'lbfgs', ytol = 1e-5, xtol = 1e-5, max_steps = 20, optimizer_options={}):
     """
     curve fitting
 
@@ -58,8 +58,8 @@ def curve_fit(fitfunc,x,y,params, weights = None, sigma = None, lossfunc = None,
     else:
         invsigma = 1/sigma
 
-    if weights is None:
-        weights = 1/y.size(0)
+ #   if weights is None:
+ #       weights = 1/y.size(0)
     
     oldparams = torch.cat([i.flatten() for i in params])
 
@@ -89,19 +89,19 @@ def curve_fit(fitfunc,x,y,params, weights = None, sigma = None, lossfunc = None,
             break
    # print(i)        
     optimizer.zero_grad()
-    with torch.no_grad():
-        y_fit = fitfunc(x,*params)
-        loss = lossfunc(y,y_fit,weights,invsigma)
+  #  with torch.no_grad():
+  #      y_fit = fitfunc(x,*params)
+  #      loss = lossfunc(y,y_fit,weights,invsigma)
     
     if len(params) == 1:
         hessian = torch.autograd.functional.hessian(lambda a:lossfunc(y,fitfunc(x,a),weights,invsigma),params[0])
-        return params,hessian.detach().pinverse()*loss
+        return params,2*hessian.detach().pinverse()
     else:
         hessian = torch.autograd.functional.hessian(lambda *a:lossfunc(y,fitfunc(x,*a),weights,invsigma),tuple(params))
         hessian = torch.stack([torch.stack([hessian[j][i] for i in range(len(params))]) for j in range(len(params))],1)
-        return params,hessian.detach().pinverse()*loss
+        return params,2*hessian.detach().pinverse()
     
-    return params,hessian.detach().pinverse()*loss
+    return params,2*hessian.detach().pinverse()
 
 def curve_fit_BS(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,fitter_options={},fitter_name='Pytorch_LBFGS'):
 
