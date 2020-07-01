@@ -191,8 +191,9 @@ def curve_fit_BS(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,boo
     params = np.stack(fitted_params)
         
     if 'chisq_cut' in bootstrap_options:
-        chisq_median = np.median(chisq)
-        masked_params = params[np.all([chisq<chisq_median*bootstrap_options["chisq_cut"],np.array(valid_min)],0)]
+        chisq_median = np.nanmedian(chisq)
+        is_accepted = np.all([chisq<chisq_median*bootstrap_options["chisq_cut"],np.array(valid_min)],0)
+        masked_params = params[is_accepted]
         mean = np.mean(masked_params,0)
         median = np.median(masked_params,0)
         std = np.std(masked_params,0)        
@@ -200,14 +201,15 @@ def curve_fit_BS(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,boo
         mean = np.mean(params,0)
         median = np.median(params,0)
         std = np.std(params,0)
+        is_accepted = True
 
-    df = create_benchmark_df(fitter_name,fitted_params,errors,npoints,weights_idx,chisq,chisq_transformed,valid_min,niter)
+    df = create_benchmark_df(fitter_name,fitted_params,errors,npoints,weights_idx,chisq,chisq_transformed,valid_min,is_accepted,niter)
     return df,mean,median,std,weights
 
-def create_benchmark_df(optimizers,params,covs,npoints,idx,chisq,chisq_transformed,is_valid,niter):
+def create_benchmark_df(optimizers,params,covs,npoints,idx,chisq,chisq_transformed,is_valid,is_accepted,niter):
     params = np.stack(params)
     covs = np.stack(covs)
-    d = {'fitter_name':optimizers,'number_points':npoints,'weights_idx':idx,'chisq':chisq,'chisq_transformed':chisq_transformed,'is_valid':is_valid,'n_iter':niter}
+    d = {'fitter_name':optimizers,'number_points':npoints,'weights_idx':idx,'chisq':chisq,'chisq_transformed':chisq_transformed,'is_valid':is_valid,'is_accepted':is_accepted,'n_iter':niter}
     d.update({str.format("params_{}",i):params[:,i] for i in range(params.shape[1])})
     d.update({str.format("errors_{}",i):covs[:,i] for i in range(covs.shape[1])})
     df = pd.DataFrame(d)

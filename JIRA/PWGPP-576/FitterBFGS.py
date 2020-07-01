@@ -154,6 +154,8 @@ class bfgsfitter:
         mean = np.mean(params,0)
         median = np.median(params,0)
         std = np.std(params,0)
+        
+        is_accepted = True
             
         df = create_benchmark_df(fitter_name,paramsBS,errorsBS,npoints,weights_idx,chisq,chisq_transformed) 
         return df,mean,median,std,weights
@@ -161,7 +163,7 @@ class bfgsfitter:
 def create_benchmark_df(optimizers,params,covs,npoints,idx,chisq,chisq_transformed):
     params = np.stack(params)
     covs = np.stack(covs)
-    d = {'fitter_name':optimizers,'number_points':npoints,'weights_idx':idx,'chisq':chisq,'chisq_transformed':chisq_transformed}
+    d = {'fitter_name':optimizers,'number_points':npoints,'weights_idx':idx,'chisq':chisq,'is_valid':True,'is_accepted':True,'chisq_transformed':chisq_transformed}
     d.update({str.format("params_{}",i):params[:,i] for i in range(params.shape[1])})
     d.update({str.format("errors_{}",i):covs[:,i] for i in range(covs.shape[1])})
     df = pd.DataFrame(d)

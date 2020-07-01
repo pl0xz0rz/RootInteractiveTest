@@ -22,7 +22,7 @@ np.random.seed(72654126)
 
 npoints = 10000
 pointlist = [1000,10000,100000]
-nfits = 50
+nfits = 15
 nbootstrap = 20
 
 sigma0=.1
@@ -35,8 +35,8 @@ data_exp.setfuncexp()
 data_lin = data.testdata()
 data_lin.setfunclin()
 
-#fitters={"Scipy_LM","Pytorch_LBFGS","Pytorch_LBFGS_CUDA","iminuit","Tensorflow_BFGS"}
-fitters={"Scipy_LM","Pytorch_LBFGS","iminuit"}
+fitters={"Scipy_LM","Pytorch_LBFGS","Pytorch_LBFGS_CUDA","iminuit","Tensorflow_BFGS"}
+#fitters={"Scipy_LM","Pytorch_LBFGS","iminuit"}
 
 def cuda_curve_fit_sync(*args, **kwargs):
     x = fitter_torch.curve_fit(*args, **kwargs)
@@ -53,6 +53,13 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
     bs_mean = []
     bs_median = []
     bs_std = []
+    bs_rmsexp = []
+    bs_rmsexp_filtered = []
+    bs_mean_filtered = []
+    bs_median_filtered = []
+    bs_std_filtered = []
+    bs_number_accepted = []
+    bs_number_valid = []
     chisq = []
     number_points = []
     t = []
@@ -83,17 +90,39 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
             fit_idx.append(ifit)
             fitter_name.append("Tensorflow_BFGS")
             t0 = time.time()
-            df0,mean,median,std,_ = fitterTF.curve_fit_BS(x, y,weights=weights,init_params=p0,sigma0=sigma_data,nbootstrap=nbootstrap)
+            df0,mean_filtered,median_filtered,std_filtered,_ = fitterTF.curve_fit_BS(x, y,weights=weights,init_params=p0,sigma0=sigma_data,nbootstrap=nbootstrap)
             t1 = time.time()
             frames.append(df0)
             df0["fit_idx"] = ifit
             df0["time"] = (t1-t0)/nbootstrap
             t.append(t1-t0)
+            mean = []
+            median = []
+            std = []
+            rmsexp = []
+            rmsexp_filtered = []
+            df0_filtered = df0.query("is_accepted")
             for a,b in enumerate(params_true_0):
                 df0[str.format("params_true_{}",a)]=b
+                mean.append(df0[str.format("params_{}",a)].mean())
+                median.append(df0[str.format("params_{}",a)].median())
+                std.append(df0[str.format("params_{}",a)].std())
+                rmsexp.append(df0[str.format("errors_{}",a)].mean())
+                rmsexp_filtered.append(df0_filtered[str.format("errors_{}",a)].mean())
+            mean = np.array(mean)
+            median = np.array(median)
+            std = np.array(std)
+            rmsexp = np.array(rmsexp)
             bs_mean.append(mean)
             bs_median.append(median)
             bs_std.append(std)
+            bs_rmsexp.append(rmsexp)
+            bs_mean_filtered.append(mean_filtered)
+            bs_median_filtered.append(median_filtered)
+            bs_std_filtered.append(std_filtered)
+            bs_rmsexp_filtered.append(np.array(rmsexp_filtered))
+            bs_number_accepted.append(df0["is_accepted"].sum())
+            bs_number_valid.append(df0["is_valid"].sum())
 
         if "Scipy_LM" in fitters:
             try:
@@ -110,17 +139,40 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
             fit_idx.append(ifit)
             fitter_name.append("Scipy_LM")
             t0 = time.time()
-            df0,mean,median,std,_=bootstrap_scipy(x, y,testfunc,init_params=p0,weights=weights,sigma0=sigma_data,nbootstrap=nbootstrap,bootstrap_options={'chisq_cut':10})
+            df0,mean_filtered,median_filtered,std_filtered,_=bootstrap_scipy(x, y,testfunc,init_params=p0,weights=weights,sigma0=sigma_data,nbootstrap=nbootstrap,bootstrap_options={'chisq_cut':4})
             t1 = time.time()
+            frames.append(df0)
             df0["fit_idx"] = ifit
             df0["time"] = (t1-t0)/nbootstrap
             t.append(t1-t0)
+            mean = []
+            median = []
+            std = []
+            rmsexp = []
+            rmsexp_filtered = []
+            df0_filtered = df0.query("is_accepted")
             for a,b in enumerate(params_true_0):
                 df0[str.format("params_true_{}",a)]=b
-            frames.append(df0)
+                mean.append(df0[str.format("params_{}",a)].mean())
+                median.append(df0[str.format("params_{}",a)].median())
+                std.append(df0[str.format("params_{}",a)].std())
+                rmsexp.append(df0[str.format("errors_{}",a)].mean())
+                rmsexp_filtered.append(df0_filtered[str.format("errors_{}",a)].mean())
+            mean = np.array(mean)
+            median = np.array(median)
+            std = np.array(std)
+            rmsexp = np.array(rmsexp)
             bs_mean.append(mean)
             bs_median.append(median)
             bs_std.append(std)
+            bs_rmsexp.append(rmsexp)
+            bs_mean_filtered.append(mean_filtered)
+            bs_median_filtered.append(median_filtered)
+            bs_std_filtered.append(std_filtered)
+            bs_rmsexp_filtered.append(np.array(rmsexp_filtered))
+            bs_number_accepted.append(df0["is_accepted"].sum())
+            bs_number_valid.append(df0["is_valid"].sum())
+
 
         if "Pytorch_LBFGS" in fitters:
             p,q,optim_state,fit_status = fitter_torch.curve_fit(testfunc_torch,torch.from_numpy(x),torch.from_numpy(y),[torch.tensor(i,requires_grad=True) for i in p0[0]],sigma=sigma_data,full_output=True)
@@ -139,17 +191,39 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
             fit_idx.append(ifit)
             fitter_name.append("Pytorch_LBFGS")
             t0 = time.time()
-            df0,mean,median,std,_=fitter_torch.curve_fit_BS(x, y,testfunc_torch,init_params=p0,weights=weights,sigma0=sigma_data,nbootstrap=nbootstrap,bootstrap_options={'chisq_cut':10})
+            df0,mean_filtered,median_filtered,std_filtered,_=fitter_torch.curve_fit_BS(x, y,testfunc_torch,init_params=p0,weights=weights,sigma0=sigma_data,nbootstrap=nbootstrap,bootstrap_options={'chisq_cut':4})
             t1 = time.time()
+            frames.append(df0)
             df0["fit_idx"] = ifit
             df0["time"] = (t1-t0)/nbootstrap
             t.append(t1-t0)
+            mean = []
+            median = []
+            std = []
+            rmsexp = []
+            rmsexp_filtered = []
+            df0_filtered = df0.query("is_accepted")
             for a,b in enumerate(params_true_0):
                 df0[str.format("params_true_{}",a)]=b
-            frames.append(df0)
+                mean.append(df0[str.format("params_{}",a)].mean())
+                median.append(df0[str.format("params_{}",a)].median())
+                std.append(df0[str.format("params_{}",a)].std())
+                rmsexp.append(df0[str.format("errors_{}",a)].mean())
+                rmsexp_filtered.append(df0_filtered[str.format("errors_{}",a)].mean())
+            mean = np.array(mean)
+            median = np.array(median)
+            std = np.array(std)
+            rmsexp = np.array(rmsexp)
             bs_mean.append(mean)
             bs_median.append(median)
             bs_std.append(std)
+            bs_rmsexp.append(rmsexp)
+            bs_mean_filtered.append(mean_filtered)
+            bs_median_filtered.append(median_filtered)
+            bs_std_filtered.append(std_filtered)
+            bs_rmsexp_filtered.append(np.array(rmsexp_filtered))
+            bs_number_accepted.append(df0["is_accepted"].sum())
+            bs_number_valid.append(df0["is_valid"].sum())
 
 
         if torch.cuda.is_available() and "Pytorch_LBFGS_CUDA" in fitters:
@@ -169,18 +243,40 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
             fit_idx.append(ifit)
             fitter_name.append("Pytorch_LBFGS_CUDA")
             t0 = time.time()
-            df0,mean,median,std,_=fitter_torch.curve_fit_BS(x, y,testfunc_torch,init_params=p0,weights=weights,sigma0=sigma_data,nbootstrap=nbootstrap,device="cuda:0",fitter_name="Pytorch_LBFGS_CUDA",bootstrap_options={'chisq_cut':10})
+            df0,mean_filtered,median_filtered,std_filtered,_=fitter_torch.curve_fit_BS(x, y,testfunc_torch,init_params=p0,weights=weights,sigma0=sigma_data,nbootstrap=nbootstrap,device="cuda:0",fitter_name="Pytorch_LBFGS_CUDA",bootstrap_options={'chisq_cut':4})
             torch.cuda.synchronize()
             t1 = time.time()
+            frames.append(df0)
             df0["fit_idx"] = ifit
             df0["time"] = (t1-t0)/nbootstrap
             t.append(t1-t0)
+            mean = []
+            median = []
+            std = []
+            rmsexp = []
+            rmsexp_filtered = []
+            df0_filtered = df0.query("is_accepted")
             for a,b in enumerate(params_true_0):
                 df0[str.format("params_true_{}",a)]=b
-            frames.append(df0)
+                mean.append(df0[str.format("params_{}",a)].mean())
+                median.append(df0[str.format("params_{}",a)].median())
+                std.append(df0[str.format("params_{}",a)].std())
+                rmsexp.append(df0[str.format("errors_{}",a)].mean())
+                rmsexp_filtered.append(df0_filtered[str.format("errors_{}",a)].mean())
+            mean = np.array(mean)
+            median = np.array(median)
+            std = np.array(std)
+            rmsexp = np.array(rmsexp)
             bs_mean.append(mean)
             bs_median.append(median)
             bs_std.append(std)
+            bs_rmsexp.append(rmsexp)
+            bs_mean_filtered.append(mean_filtered)
+            bs_median_filtered.append(median_filtered)
+            bs_std_filtered.append(std_filtered)
+            bs_rmsexp_filtered.append(np.array(rmsexp_filtered))
+            bs_number_accepted.append(df0["is_accepted"].sum())
+            bs_number_valid.append(df0["is_valid"].sum())
             
         if "iminuit" in fitters:
             p,q,status = fitter_minuit.curve_fit(testfunc, x, y,weights=1/sigma_data**2,p0=p0[0],full_output=True)
@@ -198,30 +294,62 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
             fit_idx.append(ifit)
             fitter_name.append("Minuit")
             t0 = time.time()
-            df0,mean,median,std,_=fitter_minuit.curve_fit_BS(x, y,testfunc,init_params=p0,weights=weights,sigma0=sigma_data,nbootstrap=nbootstrap,bootstrap_options={'chisq_cut':10})
+            df0,mean_filtered,median_filtered,std_filtered,_=fitter_minuit.curve_fit_BS(x, y,testfunc,init_params=p0,weights=weights,sigma0=sigma_data,nbootstrap=nbootstrap,bootstrap_options={'chisq_cut':4})
             t1 = time.time()
+            frames.append(df0)
             df0["fit_idx"] = ifit
             df0["time"] = (t1-t0)/nbootstrap
             t.append(t1-t0)
+            mean = []
+            median = []
+            std = []
+            rmsexp = []
+            rmsexp_filtered = []
+            df0_filtered = df0.query("is_accepted")
             for a,b in enumerate(params_true_0):
                 df0[str.format("params_true_{}",a)]=b
-            frames.append(df0)
+                mean.append(df0[str.format("params_{}",a)].mean())
+                median.append(df0[str.format("params_{}",a)].median())
+                std.append(df0[str.format("params_{}",a)].std())
+                rmsexp.append(df0[str.format("errors_{}",a)].mean())
+                rmsexp_filtered.append(df0_filtered[str.format("errors_{}",a)].mean())
+            mean = np.array(mean)
+            median = np.array(median)
+            std = np.array(std)
+            rmsexp = np.array(rmsexp)
             bs_mean.append(mean)
             bs_median.append(median)
-            bs_std.append(std)        
+            bs_std.append(std)
+            bs_rmsexp.append(rmsexp)
+            bs_mean_filtered.append(mean_filtered)
+            bs_median_filtered.append(median_filtered)
+            bs_std_filtered.append(std_filtered)  
+            bs_rmsexp_filtered.append(np.array(rmsexp_filtered))
+            bs_number_accepted.append(df0["is_accepted"].sum())
+            bs_number_valid.append(df0["is_valid"].sum())
 
     bs_mean = np.stack(bs_mean)
     bs_median = np.stack(bs_median)
     bs_std = np.stack(bs_std)
+    bs_rmsexp = np.stack(bs_rmsexp)
+    bs_mean_filtered = np.stack(bs_mean_filtered)
+    bs_median_filtered = np.stack(bs_median_filtered)
+    bs_std_filtered = np.stack(bs_std_filtered)
+    bs_rmsexp_filtered = np.stack(bs_rmsexp_filtered)
     params = np.stack(params)
     errors = np.stack(errors)
     params_true = list(zip(*params_true))
-    d = {"fitter_name":fitter_name,"fit_idx":fit_idx,"number_points":number_points,"time":t,"chisq":chisq,"nbootstrap":nbootstrap}
+    d = {"fitter_name":fitter_name,"fit_idx":fit_idx,"number_points":number_points,"time":t,"chisq":chisq,"nbootstrap":nbootstrap,'bs_number_valid':bs_number_valid,'bs_number_accepted':bs_number_accepted}
     d.update({str.format("params_{}",i):params[:,i] for i in range(params.shape[1])})
     d.update({str.format("errors_{}",i):errors[:,i] for i in range(errors.shape[1])})
     d.update({str.format("bs_mean_{}",i):bs_mean[:,i] for i in range(bs_mean.shape[1])})
     d.update({str.format("bs_median_{}",i):bs_median[:,i] for i in range(bs_median.shape[1])})
     d.update({str.format("bs_std_{}",i):bs_std[:,i] for i in range(bs_std.shape[1])})
+    d.update({str.format("bs_rmsexp_{}",i):bs_rmsexp[:,i] for i in range(bs_rmsexp.shape[1])})
+    d.update({str.format("bs_mean_filtered_{}",i):bs_mean_filtered[:,i] for i in range(bs_mean.shape[1])})
+    d.update({str.format("bs_median_filtered_{}",i):bs_median_filtered[:,i] for i in range(bs_median.shape[1])})
+    d.update({str.format("bs_std_filtered_{}",i):bs_std_filtered[:,i] for i in range(bs_std.shape[1])})
+    d.update({str.format("bs_rmsexp_filtered_{}",i):bs_rmsexp_filtered[:,i] for i in range(bs_rmsexp_filtered.shape[1])})
     d.update({str.format("params_true_{}",idx):el for idx,el in enumerate(params_true)})
 
     df1 = pd.DataFrame(d)
@@ -232,10 +360,10 @@ def benchmark_bootstrap(npoints,nfits,nbootstrap,testfunc,sigma_data,sigma_initi
 def bootstrap_weights(nfits,npoints):
     return np.stack([np.bincount(np.random.randint(0,npoints,npoints),minlength=npoints) for i in range(nfits)])
 
-def create_benchmark_df(optimizers,params,covs,npoints,idx,chisq,chisq_transformed,niter):
+def create_benchmark_df(optimizers,params,covs,npoints,idx,chisq,chisq_transformed,is_valid,is_accepted,niter):
     params = np.stack(params)
     covs = np.stack(covs)
-    d = {'fitter_name':optimizers,'number_points':npoints,'weights_idx':idx,'chisq':chisq,'chisq_transformed':chisq_transformed,'n_iter':niter}
+    d = {'fitter_name':optimizers,'number_points':npoints,'weights_idx':idx,'chisq':chisq,'chisq_transformed':chisq_transformed,'is_valid':is_valid,'is_accepted':is_accepted,'n_iter':niter}
     d.update({str.format("params_{}",i):params[:,i] for i in range(params.shape[1])})
     d.update({str.format("errors_{}",i):covs[:,i] for i in range(covs.shape[1])})
     df = pd.DataFrame(d)
@@ -248,7 +376,7 @@ def bootstrap_scipy(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,
     fitted_params = []
     errors=[]
     niter=[]
-    is_valid=[]
+    is_valid = []
 
     n = y.shape[0]
     nparams = init_params.shape[0]
@@ -277,11 +405,11 @@ def bootstrap_scipy(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,
         niter.append(infodict['nfev'])
         is_valid.append(True)
 
-    df = create_benchmark_df(fitter_name,fitted_params,errors,n,weights_idx,chisq,chisq_transformed,niter)
     params = np.stack(fitted_params)
     if 'chisq_cut' in bootstrap_options:
-        chisq_median = np.median(chisq)
-        masked_params = params[np.all([chisq<chisq_median*bootstrap_options["chisq_cut"],np.array(is_valid)],0)]
+        chisq_median = np.nanmedian(chisq)
+        is_accepted = np.all([chisq<chisq_median*bootstrap_options["chisq_cut"],np.array(is_valid)],0)
+        masked_params = params[is_accepted]
         mean = np.mean(masked_params,0)
         median = np.median(masked_params,0)
         std = np.std(masked_params,0)        
@@ -289,6 +417,9 @@ def bootstrap_scipy(x,y,fitfunc,init_params,sigma0=1,weights=None,nbootstrap=50,
         mean = np.nanmean(params,0)
         median = np.nanmedian(params,0)
         std = np.nanstd(params,0)
+        is_accepted = True
+        
+    df = create_benchmark_df(fitter_name,fitted_params,errors,n,weights_idx,chisq,chisq_transformed,is_valid,is_accepted,niter)
     return df,mean,median,std,weights
 
 def apply_test(test,df,alarmsigma=3,to_markdown=True):
@@ -328,7 +459,25 @@ def test_chisq(group,alarmsigma=3):
             'chisq_std': group["chisq"].std(),
             'status':np.abs(group["chisq"].mean()-1)<alarmsigma/np.sqrt(len(group.index))
             })    
-    """
+    
+def test_mean_bs(group,alarmsigma=3):
+    return pd.Series({
+            'bs_mean_0':(group['params_true_0']-group['bs_mean_0']).mean(),
+            'bs_mean_0_after':(group['params_true_0']-group['bs_mean_filtered_0']).mean(),
+            'bs_rmsexp_0':np.sqrt((group["bs_rmsexp_0"]**2).mean())/np.sqrt(len(group.index)),
+            'n_valid':(group['bs_number_valid']/group["nbootstrap"]).mean(),
+            'n_accepted':(group['bs_number_accepted']/group["nbootstrap"]).mean()
+            })
+
+def test_rms_bs(group,alarmsigma=3):
+    return pd.Series({
+            'bs_std_0':group["bs_std_0"].mean(),
+            'bs_std_0_after':group["bs_std_filtered_0"].mean(),
+            'bs_rmsexp_0':np.sqrt((group["bs_rmsexp_0"]**2).mean()),
+            'bs_rmsexp_0_after':np.sqrt((group["bs_rmsexp_0_filtered"]**2).mean()),
+            'status':np.abs(group["bs_std_filtered_0"].mean()-np.sqrt((group["bs_rmsexp_0_filtered"]**2).mean()))<alarmsigma*np.sqrt((group["bs_rmsexp_0_filtered"]**2).mean())/np.sqrt(len(group.index))
+            })
+"""    
 print("Linear: ")
 df1s = []
 df2s = []
@@ -396,6 +545,7 @@ apply_test(test_mean,df1)
 apply_test(test_rms,df1)
 apply_test(test_pull,df1)
 apply_test(test_chisq,df1)
+apply_test(test_mean_bs,df1)
 
 print(df2.groupby(["fitter_name","number_points"]).mean()[["time","n_iter"]].to_markdown())
 
