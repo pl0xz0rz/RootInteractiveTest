@@ -35,8 +35,8 @@ data_exp.setfuncexp()
 data_lin = data.testdata()
 data_lin.setfunclin()
 
-fitters={"Scipy_LM","Pytorch_LBFGS","Pytorch_LBFGS_CUDA","iminuit","Tensorflow_BFGS"}
-#fitters={"Scipy_LM","Pytorch_LBFGS","iminuit"}
+#fitters={"Scipy_LM","Pytorch_LBFGS","Pytorch_LBFGS_CUDA","iminuit","Tensorflow_BFGS"}
+fitters={"Scipy_LM","Pytorch_LBFGS","iminuit"}
 
 def cuda_curve_fit_sync(*args, **kwargs):
     x = fitter_torch.curve_fit(*args, **kwargs)
@@ -474,10 +474,10 @@ def test_rms_bs(group,alarmsigma=3):
             'bs_std_0':group["bs_std_0"].mean(),
             'bs_std_0_after':group["bs_std_filtered_0"].mean(),
             'bs_rmsexp_0':np.sqrt((group["bs_rmsexp_0"]**2).mean()),
-            'bs_rmsexp_0_after':np.sqrt((group["bs_rmsexp_0_filtered"]**2).mean()),
-            'status':np.abs(group["bs_std_filtered_0"].mean()-np.sqrt((group["bs_rmsexp_0_filtered"]**2).mean()))<alarmsigma*np.sqrt((group["bs_rmsexp_0_filtered"]**2).mean())/np.sqrt(len(group.index))
+            'bs_rmsexp_0_after':np.sqrt((group["bs_rmsexp_filtered_0"]**2).mean()),
+            'status':np.abs(group["bs_std_filtered_0"].mean()-np.sqrt((group["bs_rmsexp_filtered_0"]**2).mean()))<alarmsigma*np.sqrt((group["bs_rmsexp_filtered_0"]**2).mean())/np.sqrt(len(group.index))
             })
-"""    
+ 
 print("Linear: ")
 df1s = []
 df2s = []
@@ -496,6 +496,9 @@ apply_test(test_mean,df1)
 apply_test(test_rms,df1)
 apply_test(test_pull,df1)
 apply_test(test_chisq,df1)
+apply_test(test_mean_bs,df1)
+apply_test(test_rms_bs,df1)
+
 print(df2.groupby(["fitter_name","number_points"]).mean()[["time","n_iter"]].to_markdown())
 
 df2.to_pickle("benchmark_linear_eachfit.pkl")
@@ -519,12 +522,14 @@ apply_test(test_mean,df1)
 apply_test(test_rms,df1)
 apply_test(test_pull,df1)
 apply_test(test_chisq,df1)
+apply_test(test_mean_bs,df1)
+apply_test(test_rms_bs,df1)
 
 print(df2.groupby(["fitter_name","number_points"]).mean()[["time","n_iter"]].to_markdown())
 
 df2.to_pickle("benchmark_exponential_eachfit.pkl")
 df1.to_pickle("benchmark_exponential_bootstrap.pkl")
-"""
+
 print("Gaussian: ")
 df1s = []
 df2s = []
@@ -546,6 +551,7 @@ apply_test(test_rms,df1)
 apply_test(test_pull,df1)
 apply_test(test_chisq,df1)
 apply_test(test_mean_bs,df1)
+apply_test(test_rms_bs,df1)
 
 print(df2.groupby(["fitter_name","number_points"]).mean()[["time","n_iter"]].to_markdown())
 
