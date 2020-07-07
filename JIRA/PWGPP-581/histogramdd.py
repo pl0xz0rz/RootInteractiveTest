@@ -62,7 +62,6 @@ def histogramdd(sample,bins=None,ranges=None,weights=None,workaround=True):
         k = torch.searchsorted(edges,sample)
         k = torch.min(k,(bins+1).reshape(-1,1))
     else:
-        if workaround:
             if ranges == None:
                 ranges = torch.empty(2,D,device=device)
                 ranges[0,:]=torch.min(sample,1)[0]
@@ -73,11 +72,6 @@ def histogramdd(sample,bins=None,ranges=None,weights=None,workaround=True):
             k = torch.addcmul(tranges[0,:].reshape(-1,1),sample,tranges[1,:].reshape(-1,1)).long() #Get the right index
             k = torch.max(k,torch.zeros([],device=device,dtype=torch.long)) #Underflow bin
             k = torch.min(k,(bins+1).reshape(-1,1))
-        else:
-            if ranges == None:
-                k = findbin_uniform(sample,bins)
-            else:
-                k = findbin_uniform(sample,bins,ranges)
 
 
 
