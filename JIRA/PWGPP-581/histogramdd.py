@@ -7,7 +7,7 @@ hsgh
 import torch
 
 
-def histogramdd(sample,bins=None,ranges=None,weights=None,workaround=True):
+def histogramdd(sample,bins=None,ranges=None,weights=None,remove_overflow=True):
     edges=None
     device=None
     custom_edges = False
@@ -61,11 +61,13 @@ def histogramdd(sample,bins=None,ranges=None,weights=None,workaround=True):
             edges = tmp.to(device)
         k = torch.searchsorted(edges,sample)
         k = torch.min(k,(bins+1).reshape(-1,1))
+        edges = torch.unbind(edges)
     else:
             if ranges == None:
                 ranges = torch.empty(2,D,device=device)
                 ranges[0,:]=torch.min(sample,1)[0]
                 ranges[1,:]=torch.max(sample,1)[0]
+            edges = [torch.linspace(ranges[0,i],ranges[1,i],bins[i]+1) for i in range(len(bins))]
             tranges = torch.empty_like(ranges)
             tranges[1,:] = bins/(ranges[1,:]-ranges[0,:])
             tranges[0,:] = 1-ranges[0,:]*tranges[1,:]
@@ -74,11 +76,13 @@ def histogramdd(sample,bins=None,ranges=None,weights=None,workaround=True):
             k = torch.min(k,(bins+1).reshape(-1,1))
 
 
-
     multiindex = torch.ones_like(bins)
     multiindex[1:] = torch.cumprod(torch.flip(bins[1:],[0])+2,-1).long()
     multiindex = torch.flip(multiindex,[0])
     l = torch.sum(k*multiindex.reshape(-1,1),0)
     hist = torch.bincount(l,minlength=(multiindex[0]*(bins[0]+2)).item(),weights=weights)
     hist = hist.reshape(tuple(bins+2))
-    return hist
+    if remove_overflow:
+        core = D * (slice(1, -1),)
+        hist = hist[core]
+    return hist,edges
