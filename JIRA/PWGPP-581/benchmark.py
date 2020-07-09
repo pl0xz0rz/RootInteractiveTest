@@ -46,8 +46,8 @@ def get_tensors_ranges(n,d=3,device=None):
         torch.cuda.synchronize()
     return sample,ranges
 
-def histogramdd_synchronized(sample,bins=None,ranges=None,workaround=True):
-    hist = histogramdd(sample,bins,workaround=workaround)
+def histogramdd_synchronized(*args,**kwargs):
+    hist = histogramdd(*args,**kwargs)
     torch.cuda.synchronize()
     return hist
 
